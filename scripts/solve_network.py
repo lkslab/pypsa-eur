@@ -33,7 +33,6 @@ import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
-import yaml
 from linopy.constants import SolverStatus, TerminationCondition
 from linopy.remote.oetc import OetcCredentials, OetcHandler, OetcSettings
 from pypsa.descriptors import get_activity_mask
@@ -115,7 +114,9 @@ def add_land_use_constraint(n: pypsa.Network) -> None:
         n.buses.loc[bus, name] = df_carrier.p_nom_max.values
 
 
-def add_solar_potential_constraints(n: pypsa.Network, config: dict) -> None:
+def add_solar_potential_constraints(
+    n: pypsa.Network, solar_capacity_per_sqkm: dict
+) -> None:
     """
     Add constraint to make sure the sum capacity of all solar technologies (fixed, tracking, ets. ) is below the region potential.
 
@@ -127,8 +128,8 @@ def add_solar_potential_constraints(n: pypsa.Network, config: dict) -> None:
            solar_p_nom + solar_hsat_p_nom * 1.13 <= 10 GW
     """
     land_use_factors = {
-        "solar-hsat": config["renewable"]["solar"]["capacity_per_sqkm"]
-        / config["renewable"]["solar-hsat"]["capacity_per_sqkm"],
+        "solar-hsat": solar_capacity_per_sqkm["solar"]
+        / solar_capacity_per_sqkm["solar-hsat"],
     }
     rename = {} if PYPSA_V1 else {"Generator-ext": "Generator"}
 
@@ -1121,7 +1122,7 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs <= rhs, name="chplink-backpressure")
 
 
-def add_pipe_retrofit_constraint(n):
+def add_pipe_retrofit_constraint(n, config):
     """
     Add constraint for retrofitting existing CH4 pipelines to H2 pipelines.
     """
@@ -1139,7 +1140,6 @@ def add_pipe_retrofit_constraint(n):
 
     p_nom = n.model["Link-p_nom"]
 
-    config = n.config
     CH4_per_H2 = 1 / config["sector"]["H2_retrofit_capacity_per_CH4"]
     lhs = p_nom.loc[gas_pipes_i] + CH4_per_H2 * p_nom.loc[h2_retrofitted_i]
     rhs = n.links.p_nom[gas_pipes_i]
@@ -1168,7 +1168,7 @@ def add_flexible_egs_constraint(n):
     )
 
 
-def add_import_limit_constraint(n: pypsa.Network, sns: pd.DatetimeIndex):
+def add_import_limit_constraint(n: pypsa.Network, sns: pd.DatetimeIndex, config: dict):
     """
     Add constraint for limiting green energy imports (synthetic and biomass).
     Does not include fossil fuel imports.
@@ -1179,7 +1179,6 @@ def add_import_limit_constraint(n: pypsa.Network, sns: pd.DatetimeIndex):
     import_links = n.links.loc[n.links.carrier.str.contains("import")].index
     import_gens = n.generators.loc[n.generators.carrier.str.contains("import")].index
 
-    config = n.config
     limit = config["sector"]["imports"]["limit"]
     limit_sense = config["sector"]["imports"]["limit_sense"]
 
@@ -1227,6 +1226,7 @@ def add_co2_atmosphere_constraint(n, snapshots):
 def extra_functionality(
     n: pypsa.Network,
     snapshots: pd.DatetimeIndex,
+    config: dict,
     planning_horizons: str | None = None,
     snakemake=None,
 ) -> None:
@@ -1236,9 +1236,11 @@ def extra_functionality(
     Parameters
     ----------
     n : pypsa.Network
-        The PyPSA network instance with config and params attributes
+        The PyPSA network instance with a params attribute
     snapshots : pd.DatetimeIndex
         Simulation timesteps
+    config : dict
+        The full configuration dictionary
     planning_horizons : str, optional
         The current planning horizon year or None in perfect foresight.
 
@@ -1248,11 +1250,10 @@ def extra_functionality(
     ``pypsa.optimization.optimize``.
 
     If you want to enforce additional custom constraints, this is a good
-    location to add them. The arguments ``opts`` and
-    ``snakemake.config`` are expected to be attached to the network.
+    location to add them. The ``n.params`` attribute is expected to be
+    attached to the network.
     """
-    config = n.config
-    constraints = config["solving"].get("constraints", {})
+    constraints = n.params.solving.get("constraints", {})
     if constraints["BAU"] and n.generators.p_nom_extendable.any():
         add_BAU_constraints(n, config)
     if constraints["SAFE"] and n.generators.p_nom_extendable.any():
@@ -1272,9 +1273,9 @@ def extra_functionality(
     ) and {"solar-hsat", "solar"}.issubset(
         config["electricity"]["extendable_carriers"]["Generator"]
     ):
-        add_solar_potential_constraints(n, config)
+        add_solar_potential_constraints(n, n.params.solar_capacity_per_sqkm)
 
-    if n.config.get("sector", {}).get("tes", False):
+    if config.get("sector", {}).get("tes", False):
         if n.buses.index.str.contains(
             r"urban central heat|urban decentral heat|rural heat",
             case=False,
@@ -1285,7 +1286,7 @@ def extra_functionality(
 
     add_battery_constraints(n)
     add_lossy_bidirectional_link_constraints(n)
-    add_pipe_retrofit_constraint(n)
+    add_pipe_retrofit_constraint(n, config)
     if n._multi_invest:
         add_carbon_constraint(n, snapshots)
         add_carbon_budget_constraint(n, snapshots)
@@ -1297,7 +1298,7 @@ def extra_functionality(
         add_flexible_egs_constraint(n)
 
     if config["sector"]["imports"]["enable"]:
-        add_import_limit_constraint(n, snapshots)
+        add_import_limit_constraint(n, snapshots, config)
 
     if n.params.custom_extra_functionality:
         source_path = n.params.custom_extra_functionality
@@ -1457,7 +1458,7 @@ def create_optimization_model(
     Prepare optimization problem by creating model and adding extra functionality.
 
     This function:
-    1. Attaches config and params to network for extra_functionality
+    1. Attaches params to network for extra_functionality
     2. Creates the optimization model
     3. Adds extra functionality (custom constraints)
 
@@ -1476,8 +1477,7 @@ def create_optimization_model(
     planning_horizons : str, optional
         The current planning horizon year or None in perfect foresight
     """
-    # Add config and params to network for extra_functionality
-    n.config = config
+    # Attach params to network for extra_functionality
     n.params = params
 
     # Create optimization model
@@ -1486,7 +1486,7 @@ def create_optimization_model(
 
     # Add extra functionality (custom constraints)
     logger.info("Adding extra functionality (custom constraints)...")
-    extra_functionality(n, n.snapshots, planning_horizons, snakemake=snakemake)
+    extra_functionality(n, n.snapshots, config, planning_horizons, snakemake=snakemake)
 
 
 if __name__ == "__main__":
@@ -1548,10 +1548,10 @@ if __name__ == "__main__":
                 mode="rolling_horizon",
             )
 
-            n.config = snakemake.config
             n.params = snakemake.params
             all_kwargs["extra_functionality"] = partial(
                 extra_functionality,
+                config=snakemake.config,
                 planning_horizons=planning_horizons,
                 snakemake=snakemake,
             )
@@ -1591,10 +1591,10 @@ if __name__ == "__main__":
                 mode="iterative",
             )
 
-            n.config = snakemake.config
             n.params = snakemake.params
             all_kwargs["extra_functionality"] = partial(
                 extra_functionality,
+                config=snakemake.config,
                 planning_horizons=planning_horizons,
                 snakemake=snakemake,
             )
@@ -1624,19 +1624,7 @@ if __name__ == "__main__":
     if status == SolverStatus.warning:
         raise RuntimeError("Solving status 'warning'. Discarding solution.")
 
-    n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.export_to_netcdf(snakemake.output.network)
 
     if snakemake.output.get("model"):
         n.model.to_netcdf(snakemake.output.model)
-
-    config_output = getattr(snakemake.output, "config", None)
-    if config_output:
-        with open(config_output, "w") as file:
-            yaml.dump(
-                n.meta,
-                file,
-                default_flow_style=False,
-                allow_unicode=True,
-                sort_keys=False,
-            )

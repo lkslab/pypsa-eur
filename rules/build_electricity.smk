@@ -720,7 +720,11 @@ rule process_cost_data:
 
 
 rule simplify_network:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/simplify_network.py", "scripts/cluster_network.py"
+        ),
         network=resources("networks/base_extended.nc"),
         onshore_regions=resources("onshore_regions_base.geojson"),
         offshore_regions=resources("offshore_regions_base.geojson"),
@@ -732,8 +736,6 @@ rule simplify_network:
         busmap=resources("busmap_simplify_network.csv"),
     log:
         logs("simplify_network.log"),
-    benchmark:
-        benchmarks("simplify_network_b")
     threads: 1
     resources:
         mem_mb=12000,
@@ -748,6 +750,7 @@ rule simplify_network:
         ),
         p_max_pu=config_provider("links", "p_max_pu", default=1.0),
         p_min_pu=config_provider("links", "p_min_pu", default=-1.0),
+        line_types=config_provider("lines", "types"),
     message:
         "Simplifying network"
     script:
@@ -782,8 +785,10 @@ def input_custom_busmap(w):
 
 
 rule cluster_network:
+    cache: True
     input:
         unpack(input_custom_busmap),
+        code_dependencies=code_dependencies("scripts/cluster_network.py"),
         network=resources("networks/simplified.nc"),
         admin_shapes=resources("admin_shapes.geojson"),
         bidding_zones=lambda w: (
@@ -808,8 +813,6 @@ rule cluster_network:
         linemap=resources("linemap_cluster_network.csv"),
     log:
         logs("cluster_network.log"),
-    benchmark:
-        benchmarks("cluster_network")
     threads: 1
     resources:
         mem_mb=10000,
@@ -831,6 +834,7 @@ rule cluster_network:
         length_factor=config_provider("lines", "length_factor"),
         cluster_mode=config_provider("clustering", "mode"),
         copperplate_regions=config_provider("clustering", "copperplate_regions"),
+        solver_name=config_provider("solving", "solver", "name"),
     message:
         "Clustering network"
     script:

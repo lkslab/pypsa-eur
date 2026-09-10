@@ -664,7 +664,7 @@ if __name__ == "__main__":
 
     params = snakemake.params
     mode = params.mode
-    solver_name = snakemake.config["solving"]["solver"]["name"]
+    solver_name = snakemake.params.solver_name
 
     n = pypsa.Network(snakemake.input.network)
     buses_prev, lines_prev, links_prev = len(n.buses), len(n.lines), len(n.links)
@@ -774,7 +774,6 @@ if __name__ == "__main__":
     nc.buses["location"] = nc.buses.index
     nc.buses["unit"] = "MWh_el"
 
-    nc.meta = dict(snakemake.config)
     nc.export_to_netcdf(snakemake.output.network)
 
     logger.info(

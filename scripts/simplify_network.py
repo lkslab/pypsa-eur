@@ -439,7 +439,7 @@ if __name__ == "__main__":
     Nyears = n.snapshot_weightings.objective.sum() / 8760
     buses_prev, lines_prev, links_prev = len(n.buses), len(n.lines), len(n.links)
 
-    linetype_380 = snakemake.config["lines"]["types"][380]
+    linetype_380 = snakemake.params.line_types[380]
     n, trafo_map = simplify_network_to_380(n, linetype_380)
     busmaps = [trafo_map]
 
@@ -510,7 +510,6 @@ if __name__ == "__main__":
         clustered_regions.to_file(snakemake.output[which])
         # append_bus_shapes(n, clustered_regions, type=which.split("_")[1])
 
-    n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.export_to_netcdf(snakemake.output.network)
 
     logger.info(

@@ -187,21 +187,22 @@ def add_missing_carriers(n, carriers):
         n.add("Carrier", missing_carriers)
 
 
-def sanitize_carriers(n, config):
+def sanitize_carriers(n, nice_names: dict, tech_colors: dict):
     """
     Sanitize the carrier information in a PyPSA Network object.
 
     The function ensures that all unique carrier names are present in the network's
     carriers attribute, and adds nice names and colors for each carrier according
-    to the provided configuration dictionary.
+    to the provided nice names and tech colors.
 
     Parameters
     ----------
     n : pypsa.Network
         A PyPSA Network object that represents an electrical power system.
-    config : dict
-        A dictionary containing configuration information, specifically the
-        "plotting" key with "nice_names" and "tech_colors" keys for carriers.
+    nice_names : dict
+        Mapping of carrier name to a human-readable name.
+    tech_colors : dict
+        Mapping of carrier name to a plotting color.
 
     Returns
     -------
@@ -211,7 +212,7 @@ def sanitize_carriers(n, config):
 
     Warnings
     --------
-    Raises a warning if any carrier's "tech_colors" are not defined in the config dictionary.
+    Raises a warning if any carrier's "tech_colors" are not defined in tech_colors.
     """
 
     for c in n.components:
@@ -219,16 +220,13 @@ def sanitize_carriers(n, config):
             add_missing_carriers(n, c.static.carrier)
 
     carrier_i = n.carriers.index
-    nice_names = (
-        pd.Series(config["plotting"]["nice_names"])
-        .reindex(carrier_i)
-        .fillna(carrier_i.to_series())
+    nice_names_resolved = (
+        pd.Series(nice_names).reindex(carrier_i).fillna(carrier_i.to_series())
     )
     n.carriers["nice_name"] = n.carriers.nice_name.where(
-        n.carriers.nice_name != "", nice_names
+        n.carriers.nice_name != "", nice_names_resolved
     )
 
-    tech_colors = config["plotting"]["tech_colors"]
     colors = pd.Series(tech_colors).reindex(carrier_i)
     # try to fill missing colors with tech_colors after renaming
     missing_colors_i = colors[colors.isna()].index
