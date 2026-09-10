@@ -1342,6 +1342,7 @@ rule build_shipping_demand:
 if MOBILITY_PROFILES_DATASET["source"] in ["build"]:
 
     rule build_mobility_profiles:
+        cache: "hash-omit-storage-content"
         input:
             zip_files=storage(
                 expand(
