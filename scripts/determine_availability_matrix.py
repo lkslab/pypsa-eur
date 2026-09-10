@@ -37,7 +37,7 @@ Inputs
   wind), confer busregions
 - `resources/{run}/offshore_regions.geojson`: (if offshore wind),
   busregions
-- `"cutouts/" + params["renewable"][{technology}]['cutout']`: cutout
+- `"cutouts/" + params.renewable['cutout']`: cutout
 
 Outputs
 -------
