@@ -268,7 +268,11 @@ rule build_ship_raster:
 
 
 rule determine_availability_matrix_MD_UA:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/determine_availability_matrix_MD_UA.py"
+        ),
         copernicus=rules.download_copernicus_land_cover.output["tif"],
         wdpa=lambda w: (
             rules.retrieve_wdpa.output["gpkg"]
@@ -308,13 +312,11 @@ rule determine_availability_matrix_MD_UA:
         ),
     log:
         logs("determine_availability_matrix_MD_UA_{technology}.log"),
-    benchmark:
-        benchmarks("determine_availability_matrix_MD_UA_{technology}")
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
     params:
-        renewable=config_provider("renewable"),
+        renewable=lambda w: config_provider("renewable", w.technology)(w),
         plot_availability_matrix=config_provider("atlite", "plot_availability_matrix"),
     message:
         "Determining availability matrix for {wildcards.technology} technology"
@@ -335,8 +337,10 @@ def input_ua_md_availability_matrix(w):
 
 
 rule determine_availability_matrix:
+    cache: True
     input:
         unpack(input_ua_md_availability_matrix),
+        code_dependencies=code_dependencies("scripts/determine_availability_matrix.py"),
         corine=ancient(rules.retrieve_corine.output["tif_file"]),
         natura=lambda w: (
             f"{NATURA_DATASET['folder']}/natura.tiff"
@@ -381,13 +385,11 @@ rule determine_availability_matrix:
         ),
     log:
         logs("determine_availability_matrix_{technology}.log"),
-    benchmark:
-        benchmarks("determine_availability_matrix_{technology}")
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
     params:
-        renewable=config_provider("renewable"),
+        renewable=lambda w: config_provider("renewable", w.technology)(w),
         plot_availability_matrix=config_provider("atlite", "plot_availability_matrix"),
     message:
         "Determining availability matrix for {wildcards.technology} technology"
@@ -396,7 +398,9 @@ rule determine_availability_matrix:
 
 
 rule build_renewable_profiles:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_renewable_profiles.py"),
         availability_matrix=resources("availability_matrix_{technology}.nc"),
         offshore_shapes=resources("offshore_shapes.geojson"),
         distance_regions=resources("onshore_regions.geojson"),
@@ -413,8 +417,6 @@ rule build_renewable_profiles:
         class_regions=resources("regions_by_class_{technology}.geojson"),
     log:
         logs("build_renewable_profile_{technology}.log"),
-    benchmark:
-        benchmarks("build_renewable_profile_{technology}")
     wildcard_constraints:
         technology="(?!hydro).*",  # Any technology other than hydro
     threads: config["atlite"].get("nprocesses", 4)
@@ -423,7 +425,7 @@ rule build_renewable_profiles:
     params:
         snapshots=config_provider("snapshots"),
         drop_leap_day=config_provider("enable", "drop_leap_day"),
-        renewable=config_provider("renewable"),
+        renewable=lambda w: config_provider("renewable", w.technology)(w),
     message:
         "Building renewable profiles for {wildcards.technology} technology"
     script:
@@ -491,7 +493,9 @@ if COUNTRY_RUNOFF_DATASET["source"] == "build":
 
 
 rule build_hydro_profile:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_hydro_profile.py"),
         country_shapes=resources("country_shapes.geojson"),
         eia_hydro_generation="data/eia_hydro_annual_generation.csv",
         eia_hydro_capacity="data/eia_hydro_annual_capacity.csv",
@@ -503,8 +507,6 @@ rule build_hydro_profile:
         profile=resources("profile_hydro.nc"),
     log:
         logs("build_hydro_profile.log"),
-    benchmark:
-        benchmarks("build_hydro_profile")
     resources:
         mem_mb=5000,
     params:
@@ -519,7 +521,9 @@ rule build_hydro_profile:
 
 
 rule build_line_rating:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_line_rating.py"),
         base_network=resources("networks/base.nc"),
         cutout=lambda w: input_cutout(
             w, config_provider("lines", "dynamic_line_rating", "cutout")(w)
@@ -528,8 +532,6 @@ rule build_line_rating:
         output=resources("dlr.nc"),
     log:
         logs("build_line_rating.log"),
-    benchmark:
-        benchmarks("build_line_rating")
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=config["atlite"].get("nprocesses", 4) * 1000,
@@ -650,15 +652,15 @@ rule build_electricity_demand_base:
 
 
 rule build_hac_features:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_hac_features.py"),
         cutout=lambda w: input_cutout(w),
         regions=resources("onshore_regions_simplified.geojson"),
     output:
         resources("hac_features.nc"),
     log:
         logs("build_hac_features.log"),
-    benchmark:
-        benchmarks("build_hac_features")
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=10000,
