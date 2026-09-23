@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import requests
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -1522,6 +1521,7 @@ elif NATURA_DATASET["source"] == "build":
     rule build_natura_raster:
         cache: "omit-storage-content"
         input:
+            code_dependencies=code_dependencies("scripts/build_natura.py"),
             online=storage(NATURA_DATASET["url"]),
             cutout=lambda w: input_cutout(w),
         output:

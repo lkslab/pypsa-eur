@@ -1370,6 +1370,7 @@ if MOBILITY_PROFILES_DATASET["source"] in ["build"]:
     rule build_mobility_profiles:
         cache: "omit-storage-content"
         input:
+            code_dependencies=code_dependencies("scripts/build_mobility_profiles.py"),
             zip_files=storage(
                 expand(
                     MOBILITY_PROFILES_DATASET["url"],

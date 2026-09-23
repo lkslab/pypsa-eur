@@ -125,14 +125,13 @@ orders ``snakemake`` to run the rule [solve_network][] that produces the solved 
 rule solve_network:
     input:
         network=resources("networks/composed_{horizon}.nc"),
+        custom_extra_functionality=input_custom_extra_functionality,
     output:
         network=RESULTS + "networks/solved_{horizon}.nc",
     log:
         solver=normpath(RESULTS + "logs/solve_network/solver_{horizon}.log"),
         memory=RESULTS + "logs/solve_network/memory_{horizon}.log",
         python=RESULTS + "logs/solve_network/python_{horizon}.log",
-    benchmark:
-        (RESULTS + "benchmarks/solve_network_{horizon}.log")
     shadow:
         shadow_config
     threads: solver_threads
@@ -147,7 +146,6 @@ rule solve_network:
         co2_sequestration_potential=config_provider(
             "sector", "co2_sequestration_potential"
         ),
-        custom_extra_functionality=input_custom_extra_functionality,
     script:
         scripts("solve_network.py")
 ```
