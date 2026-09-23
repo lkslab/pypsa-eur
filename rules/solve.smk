@@ -20,6 +20,7 @@ rule solve_network:
             "scripts/solve_network.py", "scripts/_benchmark.py"
         ),
         network=resources("networks/composed_{horizon}.nc"),
+        custom_extra_functionality=input_custom_extra_functionality,
     output:
         network=RESULTS + "networks/solved_{horizon}.nc",
         model=(
@@ -46,7 +47,6 @@ rule solve_network:
             "sector", "co2_sequestration_potential"
         ),
         solar_capacity_per_sqkm=solar_capacity_per_sqkm_provider,
-        custom_extra_functionality=input_custom_extra_functionality,
     script:
         scripts("solve_network.py")
 
@@ -60,6 +60,7 @@ rule solve_operations_network:
             "scripts/_benchmark.py",
         ),
         network=RESULTS + "networks/solved_{horizon}.nc",
+        custom_extra_functionality=input_custom_extra_functionality,
     output:
         network=RESULTS + "networks/operations_{horizon}.nc",
     log:
@@ -81,6 +82,5 @@ rule solve_operations_network:
             "sector", "co2_sequestration_potential"
         ),
         solar_capacity_per_sqkm=solar_capacity_per_sqkm_provider,
-        custom_extra_functionality=input_custom_extra_functionality,
     script:
         scripts("solve_operations_network.py")

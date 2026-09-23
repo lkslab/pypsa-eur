@@ -26,7 +26,9 @@ rule build_population_layouts:
 
 
 rule build_clustered_population_layouts:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_clustered_population_layouts.py"),
         pop_layout_total=resources("pop_layout_total.nc"),
         pop_layout_urban=resources("pop_layout_urban.nc"),
         pop_layout_rural=resources("pop_layout_rural.nc"),
@@ -36,8 +38,6 @@ rule build_clustered_population_layouts:
         clustered_pop_layout=resources("pop_layout.csv"),
     log:
         logs("build_clustered_population_layouts.log"),
-    benchmark:
-        benchmarks("build_clustered_population_layouts")
     resources:
         mem_mb=10000,
     message:
@@ -47,7 +47,9 @@ rule build_clustered_population_layouts:
 
 
 rule build_solar_rooftop_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_solar_rooftop_potentials.py"),
         pop_layout=resources("pop_layout_total.nc"),
         class_regions=resources("regions_by_class_solar.geojson"),
         cutout=lambda w: input_cutout(w),
@@ -55,8 +57,6 @@ rule build_solar_rooftop_potentials:
         potentials=resources("solar_rooftop_potentials.csv"),
     log:
         logs("build_solar_rooftop_potentials.log"),
-    benchmark:
-        benchmarks("build_solar_rooftop_potentials")
     resources:
         mem_mb=10000,
     message:
@@ -66,7 +66,9 @@ rule build_solar_rooftop_potentials:
 
 
 rule build_simplified_population_layouts:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_population_layouts.py"),
         pop_layout_total=resources("pop_layout_total.nc"),
         pop_layout_urban=resources("pop_layout_urban.nc"),
         pop_layout_rural=resources("pop_layout_rural.nc"),
@@ -76,8 +78,6 @@ rule build_simplified_population_layouts:
         clustered_pop_layout=resources("pop_layout_simplified.csv"),
     log:
         logs("build_simplified_population_layouts.log"),
-    benchmark:
-        benchmarks("build_simplified_population_layouts")
     resources:
         mem_mb=10000,
     script:
@@ -85,14 +85,14 @@ rule build_simplified_population_layouts:
 
 
 rule build_gas_network:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_gas_network.py"),
         gas_network=rules.retrieve_gas_infrastructure_data.output["gas_network"],
     output:
         cleaned_gas_network=resources("gas_network.csv"),
     log:
         logs("build_gas_network.log"),
-    benchmark:
-        benchmarks("build_gas_network")
     resources:
         mem_mb=4000,
     message:
@@ -102,7 +102,13 @@ rule build_gas_network:
 
 
 rule build_gas_input_locations:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_gas_input_locations.py",
+            "scripts/build_gas_network.py",
+            "scripts/cluster_gas_network.py",
+        ),
         gem="data/gem/Europe-Gas-Tracker-2024-05.xlsx",
         entry=rules.retrieve_gas_infrastructure_data.output["entry"],
         storage=rules.retrieve_gas_infrastructure_data.output["storage"],
@@ -113,8 +119,6 @@ rule build_gas_input_locations:
         gas_input_nodes_simplified=resources("gas_input_locations_simplified.csv"),
     log:
         logs("build_gas_input_locations.log"),
-    benchmark:
-        benchmarks("build_gas_input_locations")
     resources:
         mem_mb=2000,
     message:
@@ -124,7 +128,9 @@ rule build_gas_input_locations:
 
 
 rule cluster_gas_network:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/cluster_gas_network.py"),
         cleaned_gas_network=resources("gas_network.csv"),
         onshore_regions=resources("onshore_regions.geojson"),
         offshore_regions=resources("offshore_regions.geojson"),
@@ -132,8 +138,6 @@ rule cluster_gas_network:
         clustered_gas_network=resources("gas_network_clustered.csv"),
     log:
         logs("cluster_gas_network.log"),
-    benchmark:
-        benchmarks("cluster_gas_network")
     resources:
         mem_mb=4000,
     message:
@@ -168,7 +172,9 @@ rule build_daily_heat_demand:
 
 
 rule build_hourly_heat_demand:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_hourly_heat_demand.py"),
         heat_profile="data/heat_load_profile_BDEW.csv",
         heat_demand=resources("daily_heat_demand_total.nc"),
     output:
@@ -176,8 +182,6 @@ rule build_hourly_heat_demand:
         heat_dsm_profile=resources("residential_heat_dsm_profile.csv"),
     log:
         logs("build_hourly_heat_demand_total.loc"),
-    benchmark:
-        benchmarks("build_hourly_heat_demand_total")
     threads: 8
     resources:
         mem_mb=2000,
@@ -218,7 +222,12 @@ rule build_temperature_profiles:
 
 
 rule build_central_heating_temperature_profiles:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_central_heating_temperature_profiles/run.py",
+            "scripts/build_central_heating_temperature_profiles/central_heating_temperature_approximator.py",
+        ),
         temp_air_total=resources("temp_air_total.nc"),
         onshore_regions=resources("onshore_regions.geojson"),
     output:
@@ -230,8 +239,6 @@ rule build_central_heating_temperature_profiles:
         ),
     log:
         logs("build_central_heating_temperature_profiles_{horizon}.log"),
-    benchmark:
-        benchmarks("build_central_heating_temperature_profiles_{horizon}")
     resources:
         mem_mb=20000,
     params:
@@ -287,15 +294,15 @@ rule build_central_heating_temperature_profiles:
 
 
 rule build_dh_areas:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_dh_areas.py"),
         dh_areas=rules.retrieve_dh_areas.output["dh_areas"],
         onshore_regions=resources("onshore_regions.geojson"),
     output:
         dh_areas=resources("dh_areas.geojson"),
     log:
         logs("build_dh_areas.log"),
-    benchmark:
-        benchmarks("build_dh_areas")
     resources:
         mem_mb=2000,
     script:
@@ -303,7 +310,9 @@ rule build_dh_areas:
 
 
 rule build_geothermal_heat_potential:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_geothermal_heat_potential.py"),
         isi_heat_potentials=rules.retrieve_geothermal_heat_utilisation_potentials.output[
             "isi_heat_potentials"
         ],
@@ -313,8 +322,6 @@ rule build_geothermal_heat_potential:
         heat_source_power=resources("heat_source_power_geothermal.csv"),
     log:
         logs("build_heat_source_potentials_geothermal.log"),
-    benchmark:
-        benchmarks("build_heat_source_potentials/geothermal")
     resources:
         mem_mb=2000,
     params:
@@ -341,7 +348,9 @@ rule build_geothermal_heat_potential:
 
 
 rule build_ates_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_ates_potentials.py"),
         aquifer_shapes_shp=rules.retrieve_aquifer_data_bgr.output["aquifer_shapes"][0],
         dh_areas=resources("dh_areas.geojson"),
         onshore_regions=resources("onshore_regions.geojson"),
@@ -355,8 +364,6 @@ rule build_ates_potentials:
         ates_potentials=resources("ates_potentials_{horizon}.csv"),
     log:
         logs("build_ates_potentials_{horizon}.log"),
-    benchmark:
-        benchmarks("build_ates_potentials_geothermal_{horizon}")
     resources:
         mem_mb=2000,
     params:
@@ -458,8 +465,12 @@ def input_hera_data(w) -> dict[str, str]:
 
 
 rule build_river_heat_potential:
+    cache: True
     input:
         unpack(input_hera_data),
+        code_dependencies=code_dependencies(
+            "scripts/build_surface_water_heat_potentials/build_river_water_heat_potential.py"
+        ),
         onshore_regions=resources("onshore_regions.geojson"),
         dh_areas=resources("dh_areas.geojson"),
     output:
@@ -473,8 +484,6 @@ rule build_river_heat_potential:
         ),
     log:
         logs("build_river_water_heat_potential.log"),
-    benchmark:
-        benchmarks("build_river_water_heat_potential")
     threads: 1
     resources:
         mem_mb=20000,
@@ -590,9 +599,13 @@ def input_seawater_temperature(w) -> dict[str, str]:
 
 
 rule build_sea_heat_potential:
+    cache: True
     input:
         # seawater_temperature=lambda w: input_seawater_temperature(w),
         unpack(input_seawater_temperature),
+        code_dependencies=code_dependencies(
+            "scripts/build_surface_water_heat_potentials/build_sea_water_heat_potential.py"
+        ),
         onshore_regions=resources("onshore_regions.geojson"),
         dh_areas=resources("dh_areas.geojson"),
     output:
@@ -602,8 +615,6 @@ rule build_sea_heat_potential:
         ),
     log:
         logs("build_sea_water_heat_potential.log"),
-    benchmark:
-        benchmarks("build_sea_water_heat_potential")
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=10000,
@@ -618,8 +629,16 @@ rule build_sea_heat_potential:
 
 
 rule build_cop_profiles:
+    cache: True
     input:
         unpack(input_heat_source_temperature),
+        code_dependencies=code_dependencies(
+            "scripts/build_cop_profiles/run.py",
+            "scripts/build_cop_profiles/central_heating_cop_approximator.py",
+            "scripts/build_cop_profiles/decentral_heating_cop_approximator.py",
+            "scripts/build_cop_profiles/base_cop_approximator.py",
+            "scripts/definitions/heat_system_type.py",
+        ),
         central_heating_forward_temperature_profiles=resources(
             "central_heating_forward_temperature_profiles_{horizon}.nc"
         ),
@@ -634,8 +653,6 @@ rule build_cop_profiles:
         cop_profiles=resources("cop_profiles_{horizon}.nc"),
     log:
         logs("build_cop_profiles_{horizon}.log"),
-    benchmark:
-        benchmarks("build_cop_profiles_{horizon}")
     resources:
         mem_mb=20000,
     params:
@@ -660,7 +677,12 @@ rule build_cop_profiles:
 
 
 rule build_ptes_operations:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_ptes_operations/run.py",
+            "scripts/build_ptes_operations/ptes_temperature_approximator.py",
+        ),
         central_heating_forward_temperature_profiles=resources(
             "central_heating_forward_temperature_profiles_{horizon}.nc"
         ),
@@ -678,8 +700,6 @@ rule build_ptes_operations:
         ptes_e_max_pu_profiles=resources("ptes_e_max_pu_profiles_{horizon}.nc"),
     log:
         logs("build_ptes_operations_{horizon}.log"),
-    benchmark:
-        benchmarks("build_ptes_operations_{horizon}")
     resources:
         mem_mb=2000,
     params:
@@ -703,7 +723,9 @@ rule build_ptes_operations:
 
 
 rule build_direct_heat_source_utilisation_profiles:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_direct_heat_source_utilisation_profiles.py"),
         central_heating_forward_temperature_profiles=resources(
             "central_heating_forward_temperature_profiles_{horizon}.nc"
         ),
@@ -713,8 +735,6 @@ rule build_direct_heat_source_utilisation_profiles:
         ),
     log:
         logs("build_direct_heat_source_utilisation_profiles_{horizon}.log"),
-    benchmark:
-        benchmarks("build_direct_heat_source_utilisation_profiles_{horizon}")
     resources:
         mem_mb=20000,
     params:
@@ -756,14 +776,14 @@ rule build_solar_thermal_profiles:
 
 
 rule build_eurostat_balances:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_eurostat_balances.py"),
         tsv_gz=rules.retrieve_eurostat_balances.output["tsv_gz"],
     output:
         csv=resources("eurostat_energy_balances.csv"),
     log:
         logs("build_eurostat_balances.log"),
-    benchmark:
-        benchmarks("build_eurostat_balances")
     threads: 1
     resources:
         mem_mb=4000,
@@ -774,14 +794,14 @@ rule build_eurostat_balances:
 
 
 rule build_swiss_energy_balances:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_swiss_energy_balances.py"),
         xlsx=rules.retrieve_swiss_energy_balances.output["xlsx"],
     output:
         csv=resources("switzerland_energy_balances.csv"),
     log:
         logs("build_swiss_energy_balances.log"),
-    benchmark:
-        benchmarks("build_swiss_energy_balances")
     threads: 1
     resources:
         mem_mb=4000,
@@ -792,15 +812,15 @@ rule build_swiss_energy_balances:
 
 
 rule build_co2_totals:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_co2_totals.py"),
         co2=rules.retrieve_ghg_emissions.output["csv"],
         eurostat=resources("eurostat_energy_balances.csv"),
     output:
         co2_totals=resources("co2_totals.csv"),
     log:
         logs("build_co2_totals.log"),
-    benchmark:
-        benchmarks("build_co2_totals")
     threads: 1
     resources:
         mem_mb=1000,
@@ -813,14 +833,14 @@ rule build_co2_totals:
 
 
 rule build_transformation_output_coke:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_transformation_output_coke.py"),
         eurostat=resources("eurostat_energy_balances.csv"),
     output:
         transformation_output_coke=resources("transformation_output_coke.csv"),
     log:
         logs("build_transformation_output_coke.log"),
-    benchmark:
-        benchmarks("build_transformation_output_coke")
     threads: 1
     resources:
         mem_mb=1000,
@@ -829,7 +849,9 @@ rule build_transformation_output_coke:
 
 
 rule build_energy_totals:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_energy_totals.py"),
         nuts3_shapes=resources("nuts3_shapes.geojson"),
         swiss=resources("switzerland_energy_balances.csv"),
         swiss_transport=lambda w: (
@@ -848,8 +870,6 @@ rule build_energy_totals:
         heating_efficiencies=resources("heating_efficiencies.csv"),
     log:
         logs("build_energy_totals.log"),
-    benchmark:
-        benchmarks("build_energy_totals")
     threads: 16
     resources:
         mem_mb=10000,
@@ -869,29 +889,29 @@ if (COUNTRY_HDD_DATASET := dataset_version("country_hdd"))["source"] in ["build"
     # either create a new cutout covering the whole timespan or add another cutout that covers the additional year(s).
     # E.g. cutouts=[<cutout for 1940-2024>, <cutout for 2025-2025>]
     rule build_country_hdd:
+        cache: True
         input:
+            code_dependencies=code_dependencies("scripts/build_country_hdd.py"),
             cutouts=["cutouts/europe-1940-2024-era5.nc"],
             country_shapes=resources("country_shapes.geojson"),
         output:
             era5_hdd=f"{COUNTRY_HDD_DATASET['folder']}/era5-HDD-per-country.csv",
         log:
             logs("build_country_hdd.log"),
-        benchmark:
-            benchmarks("build_country_hdd")
         script:
             scripts("build_country_hdd.py")
 
 
 rule build_heat_totals:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_heat_totals.py"),
         hdd=f"{COUNTRY_HDD_DATASET['folder']}/era5-HDD-per-country.csv",
         energy_totals=resources("energy_totals.csv"),
     output:
         heat_totals=resources("heat_totals.csv"),
     log:
         logs("build_heat_totals.log"),
-    benchmark:
-        benchmarks("build_heat_totals")
     threads: 1
     resources:
         mem_mb=2000,
@@ -902,7 +922,9 @@ rule build_heat_totals:
 
 
 rule build_biomass_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_biomass_potentials.py"),
         enspreso_biomass=rules.retrieve_enspreso_biomass.output["xlsx"],
         eurostat=resources("eurostat_energy_balances.csv"),
         nuts2=rules.retrieve_eu_nuts_2013.output["shapes_level_2"],
@@ -924,8 +946,6 @@ rule build_biomass_potentials:
         biomass_potentials=resources("biomass_potentials_{horizon}.csv"),
     log:
         logs("build_biomass_potentials_{horizon}.log"),
-    benchmark:
-        benchmarks("build_biomass_potentials_{horizon}")
     threads: 8
     resources:
         mem_mb=2000,
@@ -938,15 +958,15 @@ rule build_biomass_potentials:
 
 
 rule build_biomass_transport_costs:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_biomass_transport_costs.py"),
         sc1="data/biomass_transport_costs_supplychain1.csv",
         sc2="data/biomass_transport_costs_supplychain2.csv",
     output:
         biomass_transport_costs=resources("biomass_transport_costs.csv"),
     log:
         logs("build_biomass_transport_costs.log"),
-    benchmark:
-        benchmarks("build_biomass_transport_costs")
     threads: 1
     resources:
         mem_mb=1000,
@@ -957,7 +977,9 @@ rule build_biomass_transport_costs:
 
 
 rule build_co2_sequestration_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_co2_sequestration_potentials.py"),
         storage_table=rules.retrieve_co2stop.output["storage_table"],
         storage_map=rules.retrieve_co2stop.output["storage_map"],
         traps_table1=rules.retrieve_co2stop.output["traps_table1"],
@@ -968,8 +990,6 @@ rule build_co2_sequestration_potentials:
         resources("co2_sequestration_potentials.geojson"),
     log:
         logs("build_co2_sequestration_potentials.log"),
-    benchmark:
-        benchmarks("build_co2_sequestration_potentials")
     threads: 1
     resources:
         mem_mb=4000,
@@ -980,7 +1000,9 @@ rule build_co2_sequestration_potentials:
 
 
 rule build_clustered_co2_sequestration_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_clustered_co2_sequestration_potentials.py"),
         sequestration_potential=resources("co2_sequestration_potentials.geojson"),
         onshore_regions=resources("onshore_regions.geojson"),
         offshore_regions=resources("offshore_regions.geojson"),
@@ -988,8 +1010,6 @@ rule build_clustered_co2_sequestration_potentials:
         sequestration_potential=resources("co2_sequestration_potential.csv"),
     log:
         logs("build_clustered_co2_sequestration_potentials.log"),
-    benchmark:
-        benchmarks("build_clustered_co2_sequestration_potentials")
     threads: 1
     resources:
         mem_mb=4000,
@@ -1004,7 +1024,9 @@ rule build_clustered_co2_sequestration_potentials:
 
 
 rule build_salt_cavern_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_salt_cavern_potentials.py"),
         salt_caverns=rules.retrieve_h2_salt_caverns.output["geojson"],
         onshore_regions=resources("onshore_regions.geojson"),
         offshore_regions=resources("offshore_regions.geojson"),
@@ -1012,8 +1034,6 @@ rule build_salt_cavern_potentials:
         h2_cavern_potential=resources("salt_cavern_potentials.csv"),
     log:
         logs("build_salt_cavern_potentials.log"),
-    benchmark:
-        benchmarks("build_salt_cavern_potentials")
     threads: 1
     resources:
         mem_mb=2000,
@@ -1024,14 +1044,14 @@ rule build_salt_cavern_potentials:
 
 
 rule build_ammonia_production:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_ammonia_production.py"),
         usgs=rules.retrieve_nitrogen_statistics.output["xlsx"],
     output:
         ammonia_production=resources("ammonia_production.csv"),
     log:
         logs("build_ammonia_production.log"),
-    benchmark:
-        benchmarks("build_ammonia_production")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1042,15 +1062,15 @@ rule build_ammonia_production:
 
 
 rule build_industry_sector_ratios:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industry_sector_ratios.py"),
         ammonia_production=resources("ammonia_production.csv"),
         idees=rules.retrieve_jrc_idees.output["directory"],
     output:
         industry_sector_ratios=resources("industry_sector_ratios.csv"),
     log:
         logs("build_industry_sector_ratios.log"),
-    benchmark:
-        benchmarks("build_industry_sector_ratios")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1064,7 +1084,12 @@ rule build_industry_sector_ratios:
 
 
 rule build_industry_sector_ratios_intermediate:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_industry_sector_ratios_intermediate.py",
+            "scripts/prepare_sector_network.py",
+        ),
         industry_sector_ratios=resources("industry_sector_ratios.csv"),
         industrial_energy_demand_per_country_today=resources(
             "industrial_energy_demand_per_country_today.csv"
@@ -1076,8 +1101,6 @@ rule build_industry_sector_ratios_intermediate:
         industry_sector_ratios=resources("industry_sector_ratios_{horizon}.csv"),
     log:
         logs("build_industry_sector_ratios_{horizon}.log"),
-    benchmark:
-        benchmarks("build_industry_sector_ratios_{horizon}")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1090,7 +1113,9 @@ rule build_industry_sector_ratios_intermediate:
 
 
 rule build_industrial_production_per_country:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_production_per_country.py"),
         ch_industrial_production="data/ch_industrial_production_per_subsector.csv",
         ammonia_production=resources("ammonia_production.csv"),
         eurostat=resources("eurostat_energy_balances.csv"),
@@ -1101,8 +1126,6 @@ rule build_industrial_production_per_country:
         ),
     log:
         logs("build_industrial_production_per_country.log"),
-    benchmark:
-        benchmarks("build_industrial_production_per_country")
     threads: 8
     resources:
         mem_mb=2000,
@@ -1116,7 +1139,12 @@ rule build_industrial_production_per_country:
 
 
 rule build_industrial_production_per_country_tomorrow:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_industrial_production_per_country_tomorrow.py",
+            "scripts/prepare_sector_network.py",
+        ),
         industrial_production_per_country=resources(
             "industrial_production_per_country.csv"
         ),
@@ -1126,8 +1154,6 @@ rule build_industrial_production_per_country_tomorrow:
         ),
     log:
         logs("build_industrial_production_per_country_tomorrow_{horizon}.log"),
-    benchmark:
-        (benchmarks("build_industrial_production_per_country_tomorrow_{horizon}"))
     threads: 1
     resources:
         mem_mb=1000,
@@ -1140,7 +1166,9 @@ rule build_industrial_production_per_country_tomorrow:
 
 
 rule build_industrial_distribution_key:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_distribution_key.py"),
         onshore_regions=resources("onshore_regions.geojson"),
         clustered_pop_layout=resources("pop_layout.csv"),
         hotmaps=rules.retrieve_hotmaps_industrial_sites.output["csv"],
@@ -1152,8 +1180,6 @@ rule build_industrial_distribution_key:
         industrial_distribution_key=resources("industrial_distribution_key.csv"),
     log:
         logs("build_industrial_distribution_key.log"),
-    benchmark:
-        benchmarks("build_industrial_distribution_key")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1169,7 +1195,9 @@ rule build_industrial_distribution_key:
 
 
 rule build_industrial_production_per_node:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_production_per_node.py"),
         industrial_distribution_key=resources("industrial_distribution_key.csv"),
         industrial_production_per_country_tomorrow=resources(
             "industrial_production_per_country_tomorrow_{horizon}.csv"
@@ -1178,8 +1206,6 @@ rule build_industrial_production_per_node:
         industrial_production_per_node=resources("industrial_production_{horizon}.csv"),
     log:
         logs("build_industrial_production_per_node_{horizon}.log"),
-    benchmark:
-        (benchmarks("build_industrial_production_per_node_{horizon}"))
     threads: 1
     resources:
         mem_mb=1000,
@@ -1190,7 +1216,9 @@ rule build_industrial_production_per_node:
 
 
 rule build_industrial_energy_demand_per_node:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_energy_demand_per_node.py"),
         industry_sector_ratios=resources("industry_sector_ratios_{horizon}.csv"),
         industrial_production_per_node=resources("industrial_production_{horizon}.csv"),
         industrial_energy_demand_per_node_today=resources(
@@ -1202,8 +1230,6 @@ rule build_industrial_energy_demand_per_node:
         ),
     log:
         logs("build_industrial_energy_demand_per_node_{horizon}.log"),
-    benchmark:
-        (benchmarks("build_industrial_energy_demand_per_node_{horizon}"))
     threads: 1
     resources:
         mem_mb=1000,
@@ -1214,7 +1240,9 @@ rule build_industrial_energy_demand_per_node:
 
 
 rule build_industrial_energy_demand_per_country_today:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_energy_demand_per_country_today.py"),
         transformation_output_coke=resources("transformation_output_coke.csv"),
         jrc=rules.retrieve_jrc_idees.output["directory"],
         industrial_production_per_country=resources(
@@ -1226,8 +1254,6 @@ rule build_industrial_energy_demand_per_country_today:
         ),
     log:
         logs("build_industrial_energy_demand_per_country_today.log"),
-    benchmark:
-        benchmarks("build_industrial_energy_demand_per_country_today")
     threads: 8
     resources:
         mem_mb=2000,
@@ -1242,7 +1268,9 @@ rule build_industrial_energy_demand_per_country_today:
 
 
 rule build_industrial_energy_demand_per_node_today:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industrial_energy_demand_per_node_today.py"),
         industrial_distribution_key=resources("industrial_distribution_key.csv"),
         industrial_energy_demand_per_country_today=resources(
             "industrial_energy_demand_per_country_today.csv"
@@ -1253,8 +1281,6 @@ rule build_industrial_energy_demand_per_node_today:
         ),
     log:
         logs("build_industrial_energy_demand_per_node_today.log"),
-    benchmark:
-        benchmarks("build_industrial_energy_demand_per_node_today")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1265,7 +1291,9 @@ rule build_industrial_energy_demand_per_node_today:
 
 
 rule build_retro_cost:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_retro_cost.py"),
         building_stock="data/retro/data_building_stock.csv",
         data_tabula=rules.retrieve_tabula_calculator.output["xlsx"],
         air_temperature=resources("temp_air_total.nc"),
@@ -1281,8 +1309,6 @@ rule build_retro_cost:
         floor_area=resources("floor_area.csv"),
     log:
         logs("build_retro_cost.log"),
-    benchmark:
-        benchmarks("build_retro_cost")
     resources:
         mem_mb=1000,
     params:
@@ -1295,15 +1321,15 @@ rule build_retro_cost:
 
 
 rule build_population_weighted_energy_totals:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_population_weighted_energy_totals.py"),
         energy_totals=resources("{kind}_totals.csv"),
         clustered_pop_layout=resources("pop_layout.csv"),
     output:
         resources("pop_weighted_{kind}_totals.csv"),
     log:
         logs("build_population_weighted_{kind}_totals.log"),
-    benchmark:
-        benchmarks("build_population_weighted_{kind}_totals")
     threads: 1
     resources:
         mem_mb=2000,
@@ -1317,7 +1343,9 @@ rule build_population_weighted_energy_totals:
 
 
 rule build_shipping_demand:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_shipping_demand.py"),
         ports=rules.retrieve_attributed_ports.output["json"],
         scope=resources("europe_shape.geojson"),
         regions=resources("onshore_regions.geojson"),
@@ -1326,8 +1354,6 @@ rule build_shipping_demand:
         resources("shipping_demand.csv"),
     log:
         logs("build_shipping_demand.log"),
-    benchmark:
-        benchmarks("build_shipping_demand")
     threads: 1
     resources:
         mem_mb=2000,
@@ -1342,7 +1368,7 @@ rule build_shipping_demand:
 if MOBILITY_PROFILES_DATASET["source"] in ["build"]:
 
     rule build_mobility_profiles:
-        cache: "hash-omit-storage-content"
+        cache: "omit-storage-content"
         input:
             zip_files=storage(
                 expand(
@@ -1357,17 +1383,19 @@ if MOBILITY_PROFILES_DATASET["source"] in ["build"]:
             pkw=MOBILITY_PROFILES_DATASET["folder"] / "pkw.csv",
         log:
             logs("build_mobility_profiles.log"),
-        benchmark:
-            benchmarks("build_mobility_profiles")
         threads: 1
         resources:
             mem_mb=5000,
+        params:
+            version=MOBILITY_PROFILES_DATASET["version"],
         script:
             scripts("build_mobility_profiles.py")
 
 
 rule build_transport_demand:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_transport_demand.py"),
         network=resources("networks/clustered.nc"),
         clustered_pop_layout=resources("pop_layout.csv"),
         pop_weighted_energy_totals=resources("pop_weighted_energy_totals.csv"),
@@ -1382,8 +1410,6 @@ rule build_transport_demand:
         dsm_profile=resources("dsm_profile.csv"),
     log:
         logs("build_transport_demand.log"),
-    benchmark:
-        benchmarks("build_transport_demand")
     threads: 1
     resources:
         mem_mb=2000,
@@ -1399,15 +1425,17 @@ rule build_transport_demand:
 
 
 rule build_district_heat_share:
+    cache: True
     input:
+        code_dependencies=code_dependencies(
+            "scripts/build_district_heat_share.py", "scripts/prepare_sector_network.py"
+        ),
         district_heat_share=resources("district_heat_share.csv"),
         clustered_pop_layout=resources("pop_layout.csv"),
     output:
         district_heat_share=resources("district_heat_share_{horizon}.csv"),
     log:
         logs("build_district_heat_share_{horizon}.log"),
-    benchmark:
-        benchmarks("build_district_heat_share_{horizon}")
     threads: 1
     resources:
         mem_mb=1000,
@@ -1421,7 +1449,9 @@ rule build_district_heat_share:
 
 
 rule build_existing_heating_distribution:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_existing_heating_distribution.py"),
         existing_heating="data/existing_infrastructure/existing_heating_raw.csv",
         clustered_pop_layout=resources("pop_layout.csv"),
         clustered_pop_energy_layout=resources("pop_weighted_energy_totals.csv"),
@@ -1432,8 +1462,6 @@ rule build_existing_heating_distribution:
         ),
     log:
         logs("build_existing_heating_distribution_{horizon}.log"),
-    benchmark:
-        benchmarks("build_existing_heating_distribution_{horizon}")
     threads: 1
     resources:
         mem_mb=2000,
@@ -1448,7 +1476,9 @@ rule build_existing_heating_distribution:
 
 
 rule time_aggregation:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/time_aggregation.py"),
         network=resources("networks/clustered.nc"),
         electricity_demand=resources("electricity_demand.nc"),
         profiles=lambda w: [
@@ -1478,8 +1508,6 @@ rule time_aggregation:
         snapshot_weightings=resources("snapshot_weightings.csv"),
     log:
         logs("time_aggregation_elec.log"),
-    benchmark:
-        benchmarks("time_aggregation")
     threads: 1
     resources:
         mem_mb=5000,
@@ -1502,7 +1530,9 @@ def input_profile_offwind(w):
 
 
 rule build_egs_potentials:
+    cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_egs_potentials.py"),
         egs_cost="data/egs_costs.json",
         regions=resources("onshore_regions.geojson"),
         air_temperature=(
@@ -1516,8 +1546,6 @@ rule build_egs_potentials:
         egs_capacity_factors=resources("egs_capacity_factors.csv"),
     log:
         logs("build_egs_potentials.log"),
-    benchmark:
-        benchmarks("build_egs_potentials")
     threads: 1
     resources:
         mem_mb=2000,

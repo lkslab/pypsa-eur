@@ -6,6 +6,7 @@ Retrieve electricity demand data from ENTSOE.
 """
 
 import logging
+import os
 
 import pandas as pd
 from entsoe import EntsoePandasClient
@@ -25,9 +26,9 @@ if __name__ == "__main__":
     configure_logging(snakemake)
     set_scenario_config(snakemake)
 
-    token = snakemake.params.entsoe_token
+    token = os.environ.get("ENTSOE_API_TOKEN")
 
-    assert token is not None, "ENTSOE API token must be provided!"
+    assert token, "ENTSOE API token must be provided!"
 
     client = EntsoePandasClient(api_key=token)
     start = pd.Timestamp("20150101", tz="UTC")
