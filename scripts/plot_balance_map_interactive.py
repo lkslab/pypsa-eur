@@ -99,15 +99,15 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
     sanitize_carriers(
         n,
-        snakemake.config["plotting"]["nice_names"],
-        snakemake.config["plotting"]["tech_colors"],
+        snakemake.params.nice_names,
+        snakemake.params.tech_colors,
     )
     pypsa.options.params.statistics.round = 8
     pypsa.options.params.statistics.drop_zero = True
     pypsa.options.params.statistics.nice_names = False
 
     regions = gpd.read_file(snakemake.input.regions).set_index("name")
-    carrier = snakemake.wildcards.carrier
+    carrier = snakemake.params.carrier
     carrier = carrier.replace("_", " ")
 
     if carrier not in n.buses.carrier.unique():

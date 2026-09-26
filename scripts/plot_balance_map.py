@@ -45,8 +45,8 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
     sanitize_carriers(
         n,
-        snakemake.config["plotting"]["nice_names"],
-        snakemake.config["plotting"]["tech_colors"],
+        snakemake.params.plotting["nice_names"],
+        snakemake.params.plotting["tech_colors"],
     )
     pypsa.set_option("params.statistics.round", 8)
     pypsa.set_option("params.statistics.drop_zero", True)
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     regions = gpd.read_file(snakemake.input.regions).set_index("name")
     config = snakemake.params.plotting
-    carrier = snakemake.wildcards.carrier
+    carrier = snakemake.params.carrier
     settings = snakemake.params.settings
     carrier = carrier.replace(
         "_", " "
