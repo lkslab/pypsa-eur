@@ -101,7 +101,7 @@ if __name__ == "__main__":
     nprocesses = int(snakemake.threads)
     noprogress = snakemake.config["run"].get("disable_progressbar", True)
     noprogress = noprogress or not snakemake.config["atlite"]["show_progress"]
-    technology = snakemake.wildcards.technology
+    technology = snakemake.params.technology
     params = snakemake.params.renewable
     resource = params["resource"]  # pv panel params / wind turbine params
     resource["show_progress"] = not noprogress
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     regions = gpd.read_file(snakemake.input.distance_regions)
     # do not pull up, set_index does not work if geo dataframe is empty
     regions = regions.set_index("name").rename_axis("bus")
-    if snakemake.wildcards.technology.startswith("offwind"):
+    if snakemake.params.technology.startswith("offwind"):
         # for offshore regions, the shortest distance to the shoreline is used
         offshore_regions = availability.coords["bus"].values
         regions = regions.loc[offshore_regions]

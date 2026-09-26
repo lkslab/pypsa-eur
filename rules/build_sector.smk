@@ -242,6 +242,7 @@ rule build_central_heating_temperature_profiles:
     resources:
         mem_mb=20000,
     params:
+        horizon="{horizon}",
         max_forward_temperature_central_heating_baseyear=config_provider(
             "sector",
             "district_heating",
@@ -951,6 +952,9 @@ rule build_biomass_potentials:
         mem_mb=2000,
     params:
         biomass=config_provider("biomass"),
+        horizon="{horizon}",
+        countries=config_provider("countries"),
+        foresight=config_provider("foresight"),
     message:
         "Building biomass potential estimates for {wildcards.horizon} planning horizon"
     script:
@@ -1106,6 +1110,7 @@ rule build_industry_sector_ratios_intermediate:
         mem_mb=1000,
     params:
         industry=config_provider("industry"),
+        horizon="{horizon}",
     message:
         "Building intermediate industry sector ratios for {wildcards.horizon} planning horizon"
     script:
@@ -1159,6 +1164,7 @@ rule build_industrial_production_per_country_tomorrow:
         mem_mb=1000,
     params:
         industry=config_provider("industry"),
+        horizon="{horizon}",
     message:
         "Building future industrial production projections for {wildcards.horizon} planning horizon"
     script:
@@ -1334,6 +1340,8 @@ rule build_population_weighted_energy_totals:
     resources:
         mem_mb=2000,
     params:
+        kind="{kind}",
+        energy_totals_year=config_provider("energy", "energy_totals_year"),
         snapshots=config_provider("snapshots"),
         drop_leap_day=config_provider("enable", "drop_leap_day"),
     message:
@@ -1442,6 +1450,7 @@ rule build_district_heat_share:
         mem_mb=1000,
     params:
         sector=config_provider("sector"),
+        horizon="{horizon}",
         energy_totals_year=config_provider("energy", "energy_totals_year"),
     message:
         "Building district heating penetration share data for {wildcards.horizon} planning horizon"

@@ -103,6 +103,9 @@ rule base_network:
         lines=config_provider("lines"),
         links=config_provider("links"),
         transformers=config_provider("transformers"),
+        voltages=config_provider("electricity", "voltages"),
+        base_network=config_provider("electricity", "base_network"),
+        osm_version=config_provider("data", "osm", "version"),
         clustering=config_provider("clustering", "mode"),
         admin_levels=config_provider("clustering", "administrative"),
     message:
@@ -126,6 +129,8 @@ rule build_osm_boundaries:
     threads: 1
     resources:
         mem_mb=1500,
+    params:
+        country="{country}",
     message:
         "Building OSM boundaries for {wildcards.country}"
     script:
@@ -249,7 +254,7 @@ if CUTOUT_DATASET["source"] in ["build"]:
         resources:
             mem_mb=config["atlite"].get("nprocesses", 4) * 1000,
         params:
-            cutouts=config_provider("atlite", "cutouts"),
+            cutout=lambda w: config_provider("atlite", "cutouts", w.cutout)(w),
         message:
             "Building cutout data for {wildcards.cutout}"
         script:
@@ -324,6 +329,7 @@ rule determine_availability_matrix_MD_UA:
         mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
     params:
         renewable=lambda w: config_provider("renewable", w.technology)(w),
+        technology="{technology}",
         plot_availability_matrix=config_provider("atlite", "plot_availability_matrix"),
     message:
         "Determining availability matrix for {wildcards.technology} technology"
@@ -397,6 +403,7 @@ rule determine_availability_matrix:
         mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
     params:
         renewable=lambda w: config_provider("renewable", w.technology)(w),
+        technology="{technology}",
         plot_availability_matrix=config_provider("atlite", "plot_availability_matrix"),
     message:
         "Determining availability matrix for {wildcards.technology} technology"
@@ -433,6 +440,7 @@ rule build_renewable_profiles:
         snapshots=config_provider("snapshots"),
         drop_leap_day=config_provider("enable", "drop_leap_day"),
         renewable=lambda w: config_provider("renewable", w.technology)(w),
+        technology="{technology}",
     message:
         "Building renewable profiles for {wildcards.technology} technology"
     script:

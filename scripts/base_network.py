@@ -1633,7 +1633,18 @@ if __name__ == "__main__":
     europe_shape = snakemake.input.europe_shape
     country_shapes = snakemake.input.country_shapes
     offshore_shapes = snakemake.input.offshore_shapes
-    config = snakemake.config
+    # Only params, so the between-workflow cache hash covers every value used.
+    config = {
+        "countries": countries,
+        "electricity": {
+            "voltages": snakemake.params.voltages,
+            "base_network": snakemake.params.base_network,
+        },
+        "lines": snakemake.params.lines,
+        "links": snakemake.params.links,
+        "transformers": snakemake.params.transformers,
+        "data": {"osm": {"version": snakemake.params.osm_version}},
+    }
 
     if "links_p_nom" in snakemake.input.keys():
         links_p_nom = snakemake.input.links_p_nom

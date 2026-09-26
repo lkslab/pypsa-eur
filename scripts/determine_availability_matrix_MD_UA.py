@@ -64,13 +64,13 @@ if __name__ == "__main__":
         corine = {}
     if "grid_codes" in corine:
         # Land cover codes to emulate CORINE results
-        if snakemake.wildcards.technology == "solar":
+        if snakemake.params.technology == "solar":
             codes = [20, 30, 40, 50, 60, 90, 100]
-        elif snakemake.wildcards.technology == "onwind":
+        elif snakemake.params.technology == "onwind":
             codes = [20, 30, 40, 60, 100]
-        elif snakemake.wildcards.technology == "offwind-ac":
+        elif snakemake.params.technology == "offwind-ac":
             codes = [80, 200]
-        elif snakemake.wildcards.technology == "offwind-dc":
+        elif snakemake.params.technology == "offwind-dc":
             codes = [80, 200]
         else:
             assert False, "technology not supported"
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         )
     if "distance" in corine and corine.get("distance", 0.0) > 0.0:
         # Land cover codes to emulate CORINE results
-        if snakemake.wildcards.technology == "onwind":
+        if snakemake.params.technology == "onwind":
             codes = [50]
         else:
             assert False, "technology not supported"
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     if config["natura"]:
         wdpa_fn = (
             snakemake.input.wdpa_marine
-            if "offwind" in snakemake.wildcards.technology
+            if "offwind" in snakemake.params.technology
             else snakemake.input.wdpa
         )
         layer = get_wdpa_layer_name(wdpa_fn, "polygons")
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     if snakemake.params.plot_availability_matrix:
         logger.info(
-            f"Plotting landuse availability matrix for {snakemake.wildcards.technology}."
+            f"Plotting landuse availability matrix for {snakemake.params.technology}."
         )
         band, transform = shape_availability(
             regions.geometry.to_crs(excluder.crs), excluder

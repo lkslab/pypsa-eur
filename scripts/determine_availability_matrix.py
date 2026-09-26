@@ -75,7 +75,7 @@ if __name__ == "__main__":
     nprocesses = int(snakemake.threads)
     noprogress = snakemake.config["run"].get("disable_progressbar", True)
     noprogress = noprogress or not snakemake.config["atlite"]["show_progress"]
-    technology = snakemake.wildcards.technology
+    technology = snakemake.params.technology
     params = snakemake.params.renewable
 
     cutout = load_cutout(snakemake.input.cutout)

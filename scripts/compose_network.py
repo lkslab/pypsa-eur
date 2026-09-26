@@ -57,7 +57,7 @@ if __name__ == "__main__":
     params = snakemake.params
     inputs = snakemake.input
 
-    current_horizon = int(snakemake.wildcards.horizon)
+    current_horizon = int(snakemake.params.horizon)
     horizons = params.horizons
     foresight = params.foresight
     sector_mode = params.sector["enabled"]
