@@ -546,7 +546,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-13.0.2-py312_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/8f/d2f3f532616be4d06c316ef119683e832bd3d41e112bf3a88f4151c95b17/rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
@@ -1098,7 +1098,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstandard-0.25.0-py313hcb05632_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -1582,7 +1582,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py313h9734d34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -2133,7 +2133,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.25.0-py313h5fd188c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -2767,7 +2767,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-13.0.2-py312_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -3334,7 +3334,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstandard-0.25.0-py313hcb05632_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -3901,7 +3901,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py313h9734d34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -4467,7 +4467,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.25.0-py313h5fd188c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -7034,7 +7034,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/gurobi/linux-64/gurobi-13.0.2-py312_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -7601,7 +7601,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstandard-0.25.0-py313hcb05632_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -8168,7 +8168,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py313h9734d34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - conda: https://conda.anaconda.org/gurobi/osx-arm64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -8734,7 +8734,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.25.0-py313h5fd188c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - conda: https://conda.anaconda.org/gurobi/win-64/gurobi-13.0.2-py313_0.conda
-      - pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+      - pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
       - pypi: https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/d0/f4e9894c8aaf37efe3bf1afe15ee3cf0546d82b2713a589e266ee47bf2ef/snakemake_interface_scheduler_plugins-2.0.2-py3-none-any.whl
@@ -37701,7 +37701,7 @@ packages:
   license: PROPRIETARY
   size: 44171021
   timestamp: 1777594088427
-- pypi: git+https://github.com/lkstrp/snakemake?rev=d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb#d3a8132ed630aad1b67f5fccb183a28a6f1fe3bb
+- pypi: git+https://github.com/lkstrp/snakemake?rev=00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa#00f7cf2b5c6ae8ce0e92a329dceb722902a8a4aa
   name: snakemake
   version: 9.27.0
   requires_dist:
