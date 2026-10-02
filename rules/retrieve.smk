@@ -1846,3 +1846,8 @@ if (MOBILITY_PROFILES_DATASET := dataset_version("mobility_profiles"))["source"]
         run:
             copy2(input["kfz"], output["kfz"])
             copy2(input["pkw"], output["pkw"])
+
+
+# Downloads run in the main process. On a cluster's shared filesystem a job's
+# copy of a storage input races the main process's own and trips the mtime check.
+workflow.localrules(*(r.name for r in workflow.rules if r.name.startswith("retrieve_")))
