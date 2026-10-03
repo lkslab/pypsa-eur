@@ -10,8 +10,10 @@ temporary path, and inspects which jobs would read from or write to the output f
 cache.
 """
 
+import hashlib
 import os
 import re
+import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
@@ -45,32 +47,34 @@ UNCACHED_BUILD_RULES: frozenset[str] = frozenset()
 CacheKey = tuple[str, tuple[tuple[str, str], ...]]
 
 
-def cache_entries(
+def cache_outputs(
     configfile: Path,
     targets: list[str],
     cache_dir: Path,
     overrides: dict | None = None,
-) -> dict[CacheKey, list[Path]]:
+    workdir: Path = ROOT,
+) -> dict[CacheKey, list[tuple[Path, Path]]]:
     """
-    Build the DAG for targets and return each cacheable job's cache file paths.
+    Build the DAG for targets and return each cacheable job's (output, cache file) pairs.
 
     Keyed by (rule name, sorted wildcard items). Only jobs whose rule is marked
     eligible for caching (rule.cache.output) are included. Runs with --cache
     (WorkflowSettings(cache=[])), so a rule's `cache: True` directive is enough
-    to make it eligible without naming it explicitly.
+    to make it eligible without naming it explicitly. Empty targets build the
+    default target.
     """
     prior_cache_env = os.environ.get("SNAKEMAKE_OUTPUT_CACHE")
     os.environ["SNAKEMAKE_OUTPUT_CACHE"] = str(cache_dir)
     try:
-        entries: dict[CacheKey, list[Path]] = {}
+        entries: dict[CacheKey, list[tuple[Path, Path]]] = {}
         with SnakemakeApi(OutputSettings()) as snakemake_api:
             workflow_api = snakemake_api.workflow(
                 resource_settings=ResourceSettings(cores=1),
                 config_settings=ConfigSettings(
-                    configfiles=[ROOT / configfile], config=overrides or {}
+                    configfiles=[workdir / configfile], config=overrides or {}
                 ),
                 workflow_settings=WorkflowSettings(cache=[]),
-                workdir=ROOT,
+                workdir=workdir,
             )
             workflow_api.dag(dag_settings=DAGSettings(targets=targets))
             workflow = workflow_api._workflow
@@ -85,10 +89,9 @@ def cache_entries(
                 if not (job.rule.cache and job.rule.cache.output):
                     continue
                 key: CacheKey = (job.rule.name, tuple(sorted(job.wildcards.items())))
-                files = workflow.async_run(
+                entries[key] = workflow.async_run(
                     workflow.output_file_cache.get_outputfiles_and_cachefiles(job)
                 )
-                entries[key] = [cachefile for _, cachefile in files]
 
         return entries
     finally:
@@ -96,6 +99,21 @@ def cache_entries(
             os.environ.pop("SNAKEMAKE_OUTPUT_CACHE", None)
         else:
             os.environ["SNAKEMAKE_OUTPUT_CACHE"] = prior_cache_env
+
+
+def cache_entries(
+    configfile: Path,
+    targets: list[str],
+    cache_dir: Path,
+    overrides: dict | None = None,
+) -> dict[CacheKey, list[Path]]:
+    """Same as cache_outputs, but keep only each job's cache file paths."""
+    return {
+        key: [cachefile for _, cachefile in pairs]
+        for key, pairs in cache_outputs(
+            configfile, targets, cache_dir, overrides
+        ).items()
+    }
 
 
 def _provenance_hash(cachefile: Path) -> str:
@@ -907,3 +925,262 @@ def test_cache_dry_run_parses_cleanly(cache_dir: Path) -> None:
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def _shared_cachefiles(
+    entries: dict[CacheKey, list[Path]],
+) -> dict[Path, list[CacheKey]]:
+    """Return every cache file claimed by more than one job, with its owners."""
+    owners: dict[Path, list[CacheKey]] = {}
+    for key, cachefiles in entries.items():
+        for cachefile in cachefiles:
+            owners.setdefault(cachefile, []).append(key)
+    return {path: keys for path, keys in owners.items() if len(keys) > 1}
+
+
+def test_shared_cachefiles_reports_a_duplicated_key() -> None:
+    shared = Path("cache/abc.nc")
+    entries: dict[CacheKey, list[Path]] = {
+        ("rule_a", ()): [shared],
+        ("rule_b", (("horizon", "2050"),)): [shared, Path("cache/def.nc")],
+        ("rule_c", ()): [Path("cache/ghi.nc")],
+    }
+    assert _shared_cachefiles(entries) == {
+        shared: [("rule_a", ()), ("rule_b", (("horizon", "2050"),))]
+    }
+
+
+@pytest.mark.parametrize(
+    "configfile",
+    [
+        ELEC_CONFIG,
+        Path("config/test/config.overnight.yaml"),
+        Path("config/test/config.myopic.yaml"),
+    ],
+    ids=lambda path: path.stem,
+)
+def test_no_two_jobs_share_a_cache_entry(configfile: Path, cache_dir: Path) -> None:
+    """No two jobs in a test config's default DAG resolve to the same cache file."""
+    entries = cache_entries(configfile, [], cache_dir)
+    assert entries
+    shared = {
+        path.name: [f"{rule}{dict(wildcards)}" for rule, wildcards in keys]
+        for path, keys in _shared_cachefiles(entries).items()
+    }
+    assert shared == {}
+
+
+STORED_RE = re.compile(r"Moving output file (.+) to cache\.$", re.MULTILINE)
+FETCHED_RE = re.compile(r"Symlinking output file (.+) from cache\.$", re.MULTILINE)
+MISSING = "<missing>"
+
+
+def _logged_paths(pattern: re.Pattern, log: str, workdir: Path) -> set[Path]:
+    """Return the workdir-relative paths a snakemake log names in pattern's lines."""
+    paths = set()
+    for match in pattern.finditer(log):
+        path = Path(match.group(1).strip())
+        paths.add(path.relative_to(workdir) if path.is_absolute() else path)
+    return paths
+
+
+def _was_fetched(output: Path, job_outputs: Sequence[Path], fetched: set[Path]) -> bool:
+    """
+    Return whether output, or a directory of its own job holding it, was fetched.
+
+    A fetched directory logs its entries but never itself or the outputs inside it.
+    """
+
+    def logged(path: Path) -> bool:
+        return any(p == path or p.is_relative_to(path) for p in fetched)
+
+    return logged(output) or any(
+        output != other and output.is_relative_to(other) and logged(other)
+        for other in job_outputs
+    )
+
+
+def _tree_hashes(workdir: Path, outputs: Sequence[Path]) -> dict[str, str]:
+    """Map every file under outputs to its sha256, following symlinks."""
+    hashes: dict[str, str] = {}
+    for output in outputs:
+        path = workdir / output
+        if path.is_dir():
+            files = [
+                Path(root, name)
+                for root, _, names in os.walk(path, followlinks=True)
+                for name in names
+                if name != ".snakemake_timestamp"
+            ]
+        else:
+            files = [path]
+        for file in files:
+            relative = str(file.relative_to(workdir))
+            if not file.exists():
+                hashes[relative] = MISSING
+                continue
+            hashes[relative] = hashlib.sha256(file.read_bytes()).hexdigest()
+    return hashes
+
+
+def test_logged_paths_parses_store_and_fetch_lines(tmp_path: Path) -> None:
+    log = "\n".join(
+        [
+            "Moving output file resources/a.nc to cache.",
+            f"Moving output file {tmp_path}/resources/b.nc to cache.",
+            "Symlinking output file resources/a.nc from cache.",
+            "rule base_network:",
+        ]
+    )
+    assert _logged_paths(STORED_RE, log, tmp_path) == {
+        Path("resources/a.nc"),
+        Path("resources/b.nc"),
+    }
+    assert _logged_paths(FETCHED_RE, log, tmp_path) == {Path("resources/a.nc")}
+
+
+def test_was_fetched_covers_directory_entries() -> None:
+    fetched = {Path("data/dir/x.csv"), Path("resources/a.nc")}
+    job = [Path("data/dir"), Path("data/dir/nested.csv")]
+    assert _was_fetched(Path("resources/a.nc"), [], fetched)
+    assert _was_fetched(Path("data/dir"), job, fetched)
+    assert _was_fetched(Path("data/dir/nested.csv"), job, fetched)
+    assert not _was_fetched(Path("data/dir/nested.csv"), [], fetched)
+    assert not _was_fetched(Path("resources/b.nc"), [], fetched)
+
+
+def test_tree_hashes_follows_symlinks_and_skips_timestamps(tmp_path: Path) -> None:
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / "entry").write_text("x")
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "linked").symlink_to(tmp_path / "cache" / "entry")
+    (out / ".snakemake_timestamp").touch()
+    hashes = _tree_hashes(tmp_path, [Path("out"), Path("gone.nc")])
+    assert hashes == {
+        "out/linked": hashlib.sha256(b"x").hexdigest(),
+        "gone.nc": MISSING,
+    }
+
+
+def _copy_workdir(dest: Path) -> None:
+    """Copy tracked and untracked-not-ignored files of the repo into dest."""
+    listed = subprocess.run(
+        ["git", "ls-files", "-co", "--exclude-standard", "-z"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    ).stdout.decode()
+    for name in filter(None, listed.split("\0")):
+        source = ROOT / name
+        if not source.exists() and not source.is_symlink():
+            continue
+        target = dest / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target, follow_symlinks=False)
+
+
+def _run_pass(workdir: Path, cache_root: Path, name: str, log_dir: Path) -> str:
+    """Run the default target under the runner's cache flags and return the log."""
+    storage = cache_root / "storage" / name
+    storage.mkdir(parents=True)
+    env = os.environ.copy()
+    env["SNAKEMAKE_OUTPUT_CACHE"] = str(cache_root / "output-cache")
+    result = subprocess.run(
+        [
+            "snakemake",
+            "-c",
+            "all",
+            "--configfile",
+            str(ELEC_CONFIG),
+            "--cache",
+            "--local-storage-prefix",
+            str(storage),
+            "--rerun-incomplete",
+        ],
+        cwd=workdir,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    (log_dir / f"{name}.log").write_text(result.stdout)
+    if result.returncode != 0:
+        pytest.fail(f"{name} exited {result.returncode}:\n{_tail(result.stdout)}")
+    return result.stdout
+
+
+def _owner_of(path: Path, owner: dict[Path, str]) -> str:
+    """Return the job owning path, itself an output or a file inside one."""
+    return next(
+        (job for output, job in owner.items() if path.is_relative_to(output)), "?"
+    )
+
+
+def _tail(log: str, lines: int = 60) -> str:
+    return "\n".join(log.splitlines()[-lines:])
+
+
+@pytest.mark.slow
+def test_electricity_round_trip_stores_then_fetches(tmp_path: Path) -> None:
+    """
+    Run the electricity config twice, storing into an empty cache, then fetching.
+
+    Pass 2 runs in a fresh copy of the repo, so no output can come from pass 1's tree.
+    """
+    cache_root = tmp_path / "cache"
+    (cache_root / "output-cache").mkdir(parents=True)
+    first, second = tmp_path / "pass-1", tmp_path / "pass-2"
+    _copy_workdir(first)
+    _copy_workdir(second)
+
+    jobs = cache_outputs(ELEC_CONFIG, [], cache_root / "output-cache", workdir=first)
+    owner = {
+        output: f"{rule}{dict(wildcards)}"
+        for (rule, wildcards), pairs in jobs.items()
+        for output, _ in pairs
+    }
+    assert owner
+
+    log = _run_pass(first, cache_root, "pass-1", tmp_path)
+    stored = _logged_paths(STORED_RE, log, first)
+    not_stored = sorted(
+        f"{owner[output]}: {output}" for output in owner if output not in stored
+    )
+    assert not_stored == [], (
+        "fetched from an empty cache (a key collision) or never stored:\n"
+        + "\n".join(not_stored)
+    )
+    first_hashes = _tree_hashes(first, list(owner))
+
+    log = _run_pass(second, cache_root, "pass-2", tmp_path)
+    restored = sorted(_logged_paths(STORED_RE, log, second))
+    assert restored == [], "executed again instead of fetched:\n" + "\n".join(
+        f"{owner.get(output, '?')}: {output}" for output in restored
+    )
+    fetched = _logged_paths(FETCHED_RE, log, second)
+    not_fetched = []
+    for pairs in jobs.values():
+        outputs = [output for output, _ in pairs]
+        not_fetched += [
+            f"{owner[output]}: {output}"
+            for output in outputs
+            if not _was_fetched(output, outputs, fetched)
+        ]
+    assert not_fetched == [], "not obtained from cache:\n" + "\n".join(not_fetched)
+
+    second_hashes = _tree_hashes(second, list(owner))
+    differing = sorted(
+        path
+        for path in first_hashes.keys() | second_hashes.keys()
+        if first_hashes.get(path) != second_hashes.get(path)
+    )
+    assert differing == [], (
+        "fetched tree is missing files or has extra ones:\n"
+        + "\n".join(
+            f"{_owner_of(Path(path), owner)}: {path} "
+            f"{first_hashes.get(path, MISSING)} vs {second_hashes.get(path, MISSING)}"
+            for path in differing
+        )
+    )
