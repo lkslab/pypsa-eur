@@ -8,6 +8,9 @@ version: v2026.08.0
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#tutorial
 tutorial: false
 
+# docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#custom_rules
+custom_rules: []
+
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#logging
 logging:
   level: INFO
