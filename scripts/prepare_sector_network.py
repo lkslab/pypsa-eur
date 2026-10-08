@@ -91,11 +91,11 @@ def define_spatial(nodes, options):
         spatial.co2.process_emissions = nodes + " process emissions"
         spatial.co2.dense = nodes + " co2 dense"
     else:
-        spatial.co2.nodes = ["co2 stored"]
+        spatial.co2.nodes = ["EU co2 stored"]
         spatial.co2.locations = ["EU"]
-        spatial.co2.vents = ["co2 vent"]
-        spatial.co2.process_emissions = ["process emissions"]
-        spatial.co2.dense = ["co2 dense"]
+        spatial.co2.vents = ["EU co2 vent"]
+        spatial.co2.process_emissions = ["EU process emissions"]
+        spatial.co2.dense = ["EU co2 dense"]
 
     spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
 
@@ -455,6 +455,7 @@ def add_carrier_buses(
         n.add(
             "Generator",
             nodes + suffix,
+            suffix=" Generator",
             bus=nodes + suffix,
             p_nom_extendable=True,
             carrier=carrier + suffix,
@@ -580,6 +581,7 @@ def add_co2_tracking(
     n.add(
         "Store",
         "co2 atmosphere",
+        suffix=" Store",
         e_nom=np.inf,
         e_min_pu=-1,
         carrier="co2",
@@ -599,6 +601,7 @@ def add_co2_tracking(
     n.add(
         "Store",
         spatial.co2.nodes,
+        suffix=" Store",
         e_nom_extendable=True,
         capital_cost=costs.at["CO2 storage tank", "capital_cost"],
         carrier="co2 stored",
@@ -633,6 +636,7 @@ def add_co2_tracking(
         n.add(
             "Link",
             spatial.co2.dense,
+            suffix=" compression",
             bus0=spatial.co2.nodes,
             bus1=spatial.co2.dense,
             bus2=spatial.nodes,
@@ -658,6 +662,7 @@ def add_co2_tracking(
         n.add(
             "Link",
             sequestration_buses,
+            suffix=" Link",
             bus0=spatial.co2.dense,
             bus1=sequestration_buses,
             carrier="co2 sequestered",
@@ -671,6 +676,7 @@ def add_co2_tracking(
         n.add(
             "Link",
             sequestration_buses,
+            suffix=" Link",
             bus0=spatial.co2.nodes,
             bus1=sequestration_buses,
             carrier="co2 sequestered",
@@ -711,6 +717,7 @@ def add_co2_tracking(
     n.add(
         "Store",
         sequestration_buses,
+        suffix=" Store",
         e_nom_extendable=True,
         e_nom_max=e_nom_max,
         marginal_cost=-0.1,
@@ -725,6 +732,7 @@ def add_co2_tracking(
         n.add(
             "Link",
             spatial.co2.vents,
+            suffix=" Link",
             bus0=spatial.co2.nodes,
             bus1="co2 atmosphere",
             carrier="co2 vent",
@@ -1468,6 +1476,7 @@ def insert_electricity_distribution_grid(
     n.add(
         "Store",
         nodes + " home battery",
+        suffix=" Store",
         bus=nodes + " home battery",
         location=nodes,
         e_cyclic=True,
@@ -1806,7 +1815,11 @@ def add_h2_gas_infrastructure(
         n.generators.drop(remove_i, inplace=True)
 
         input_types = ["lng", "pipeline", "production"]
-        p_nom = gas_input_nodes[input_types].sum(axis=1).rename(lambda x: x + " gas")
+        p_nom = (
+            gas_input_nodes[input_types]
+            .sum(axis=1)
+            .rename(lambda x: x + " gas Generator")
+        )
         n.generators.loc[gas_i, "p_nom_extendable"] = False
         n.generators.loc[gas_i, "p_nom"] = p_nom
 
@@ -2382,6 +2395,7 @@ def add_ice_cars(
     n.add(
         "Load",
         spatial.oil.land_transport,
+        suffix=" demand",
         bus=spatial.oil.land_transport,
         carrier="land transport oil",
         p_set=profile.loc[n.snapshots],
@@ -2391,6 +2405,7 @@ def add_ice_cars(
     n.add(
         "Link",
         spatial.oil.land_transport,
+        suffix=" conversion",
         bus0=spatial.oil.nodes,
         bus1=spatial.oil.land_transport,
         bus2="co2 atmosphere",
@@ -3140,7 +3155,7 @@ def add_heat(
                 n.add(
                     "Generator",
                     nodes,
-                    suffix=f" {heat_carrier}",
+                    suffix=f" {heat_carrier} Generator",
                     bus=nodes + f" {heat_carrier}",
                     carrier=heat_carrier,
                     p_nom_extendable=True,
@@ -3729,6 +3744,7 @@ def add_biomass(
         n.add(
             "Generator",
             spatial.msw.nodes,
+            suffix=" Generator",
             bus=spatial.msw.nodes,
             carrier="municipal solid waste",
             p_nom=msw_biomass_potentials_spatial,
@@ -3756,6 +3772,7 @@ def add_biomass(
     n.add(
         "Generator",
         spatial.gas.biogas,
+        suffix=" Generator",
         bus=spatial.gas.biogas,
         carrier="biogas",
         p_nom=biogas_potentials_spatial,
@@ -3767,6 +3784,7 @@ def add_biomass(
     n.add(
         "Generator",
         spatial.biomass.nodes,
+        suffix=" Generator",
         bus=spatial.biomass.nodes,
         carrier="solid biomass",
         p_nom=solid_biomass_potentials_spatial,
@@ -3803,7 +3821,8 @@ def add_biomass(
 
         n.add(
             "Store",
-            ["solid biomass import"],
+            ["EU solid biomass import"],
+            suffix=" Store",
             bus=["EU solid biomass import"],
             carrier="solid biomass import",
             e_nom=biomass_import_max_amount,
@@ -3862,6 +3881,7 @@ def add_biomass(
         n.add(
             "Generator",
             spatial.biomass.bioliquids,
+            suffix=" Generator",
             bus=spatial.biomass.bioliquids,
             carrier="unsustainable bioliquids",
             p_nom=unsustainable_liquid_biofuel_potentials_spatial,
@@ -3883,6 +3903,7 @@ def add_biomass(
         n.add(
             "Link",
             spatial.biomass.bioliquids,
+            suffix=" conversion",
             bus0=spatial.biomass.bioliquids,
             bus1=spatial.oil.nodes,
             bus2="co2 atmosphere",
@@ -4445,6 +4466,7 @@ def add_industry(
     n.add(
         "Load",
         spatial.biomass.industry,
+        suffix=" demand",
         bus=spatial.biomass.industry,
         carrier="solid biomass for industry",
         p_set=p_set,
@@ -4453,6 +4475,7 @@ def add_industry(
     n.add(
         "Link",
         spatial.biomass.industry,
+        suffix=" conversion",
         bus0=spatial.biomass.nodes,
         bus1=spatial.biomass.industry,
         carrier="solid biomass for industry",
@@ -4502,6 +4525,7 @@ def add_industry(
     n.add(
         "Load",
         spatial.gas.industry,
+        suffix=" demand",
         bus=spatial.gas.industry,
         carrier="gas for industry",
         p_set=spatial_gas_demand,
@@ -4510,6 +4534,7 @@ def add_industry(
     n.add(
         "Link",
         spatial.gas.industry,
+        suffix=" conversion",
         bus0=spatial.gas.nodes,
         bus1=spatial.gas.industry,
         bus2="co2 atmosphere",
@@ -4575,6 +4600,7 @@ def add_industry(
     n.add(
         "Load",
         spatial.methanol.industry,
+        suffix=" demand",
         bus=spatial.methanol.industry,
         carrier="industry methanol",
         p_set=p_set_methanol,
@@ -4583,6 +4609,7 @@ def add_industry(
     n.add(
         "Link",
         spatial.methanol.industry,
+        suffix=" conversion",
         bus0=spatial.methanol.nodes,
         bus1=spatial.methanol.industry,
         bus2="co2 atmosphere",
@@ -4682,6 +4709,7 @@ def add_industry(
     n.add(
         "Load",
         spatial.oil.naphtha,
+        suffix=" demand",
         bus=spatial.oil.naphtha,
         carrier="naphtha for industry",
         p_set=p_set_naphtha,
@@ -4696,6 +4724,7 @@ def add_industry(
     n.add(
         "Link",
         spatial.oil.naphtha,
+        suffix=" conversion",
         bus0=spatial.oil.nodes,
         bus1=spatial.oil.naphtha,
         bus2=spatial.co2.process_emissions,
@@ -4742,6 +4771,7 @@ def add_industry(
     n.add(
         "Store",
         spatial.oil.non_sequestered_hvc,
+        suffix=" Store",
         bus=spatial.oil.non_sequestered_hvc,
         carrier="non-sequestered HVC",
         e_nom=HVC_potential,
@@ -4766,6 +4796,7 @@ def add_industry(
             n.add(
                 "Link",
                 spatial.msw.locations,
+                suffix=" municipal solid waste to HVC",
                 bus0=spatial.msw.nodes,
                 bus1=spatial.oil.non_sequestered_hvc,
                 bus2="co2 atmosphere",
@@ -4890,6 +4921,7 @@ def add_industry(
     n.add(
         "Load",
         spatial.co2.process_emissions,
+        suffix=" demand",
         bus=spatial.co2.process_emissions,
         carrier="process emissions",
         p_set=p_set,
@@ -4898,6 +4930,7 @@ def add_industry(
     n.add(
         "Link",
         spatial.co2.process_emissions,
+        suffix=" conversion",
         bus0=spatial.co2.process_emissions,
         bus1="co2 atmosphere",
         carrier="process emissions",
@@ -4948,6 +4981,7 @@ def add_industry(
         n.add(
             "Load",
             spatial.ammonia.nodes,
+            suffix=" demand",
             bus=spatial.ammonia.nodes,
             carrier="NH3",
             p_set=p_set,
@@ -4985,6 +5019,7 @@ def add_industry(
         n.add(
             "Load",
             spatial.coal.industry,
+            suffix=" demand",
             bus=spatial.coal.industry,
             carrier="coal for industry",
             p_set=p_set,
@@ -4993,6 +5028,7 @@ def add_industry(
         n.add(
             "Link",
             spatial.coal.industry,
+            suffix=" conversion",
             bus0=spatial.coal.nodes,
             bus1=spatial.coal.industry,
             bus2="co2 atmosphere",
@@ -5044,6 +5080,7 @@ def add_aviation(
     n.add(
         "Load",
         spatial.oil.kerosene,
+        suffix=" demand",
         bus=spatial.oil.kerosene,
         carrier="kerosene for aviation",
         p_set=p_set,
@@ -5052,6 +5089,7 @@ def add_aviation(
     n.add(
         "Link",
         spatial.oil.kerosene,
+        suffix=" conversion",
         bus0=spatial.oil.nodes,
         bus1=spatial.oil.kerosene,
         bus2="co2 atmosphere",
@@ -5197,6 +5235,7 @@ def add_shipping(
         n.add(
             "Load",
             spatial.methanol.shipping,
+            suffix=" demand",
             bus=spatial.methanol.shipping,
             carrier="shipping methanol",
             p_set=p_set_methanol_shipping,
@@ -5205,6 +5244,7 @@ def add_shipping(
         n.add(
             "Link",
             spatial.methanol.shipping,
+            suffix=" conversion",
             bus0=spatial.methanol.nodes,
             bus1=spatial.methanol.shipping,
             bus2="co2 atmosphere",
@@ -5230,6 +5270,7 @@ def add_shipping(
         n.add(
             "Load",
             spatial.oil.shipping,
+            suffix=" demand",
             bus=spatial.oil.shipping,
             carrier="shipping oil",
             p_set=p_set_oil,
@@ -5238,6 +5279,7 @@ def add_shipping(
         n.add(
             "Link",
             spatial.oil.shipping,
+            suffix=" conversion",
             bus0=spatial.oil.nodes,
             bus1=spatial.oil.shipping,
             bus2="co2 atmosphere",
@@ -5512,6 +5554,7 @@ def add_agriculture(
         n.add(
             "Load",
             spatial.oil.agriculture_machinery,
+            suffix=" demand",
             bus=spatial.oil.agriculture_machinery,
             carrier="agriculture machinery oil",
             p_set=p_set,
@@ -5520,6 +5563,7 @@ def add_agriculture(
         n.add(
             "Link",
             spatial.oil.agriculture_machinery,
+            suffix=" conversion",
             bus0=spatial.oil.nodes,
             bus1=spatial.oil.agriculture_machinery,
             bus2="co2 atmosphere",
@@ -5893,6 +5937,7 @@ def add_enhanced_geothermal(
     n.add(
         "Generator",
         spatial.geothermal_heat.nodes,
+        suffix=" Generator",
         bus=spatial.geothermal_heat.nodes,
         carrier="geothermal heat",
         p_nom_extendable=True,
