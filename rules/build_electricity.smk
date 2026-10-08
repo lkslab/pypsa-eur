@@ -247,7 +247,7 @@ if CUTOUT_DATASET["source"] in ["build"]:
         input:
             code_dependencies=code_dependencies("scripts/build_cutout.py"),
         output:
-            cutout=CUTOUT_DATASET["folder"] / "{cutout}.nc",
+            cutout=CUTOUT_DATASET["folder"] + "/{cutout}.nc",
         log:
             "logs/build_cutout/{cutout}.log",
         threads: config["atlite"].get("nprocesses", 4)
