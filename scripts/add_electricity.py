@@ -399,7 +399,13 @@ def attach_load(
     logger.info(f"Load data scaled by factor {scaling}.")
     load *= scaling
 
-    n.add("Load", load.columns, bus=load.columns, p_set=load, carrier="electricity")
+    n.add(
+        "Load",
+        load.columns + " electricity",
+        bus=load.columns,
+        p_set=load.rename(columns=lambda bus: f"{bus} electricity"),
+        carrier="electricity",
+    )
 
 
 def set_transmission_costs(
@@ -1135,7 +1141,7 @@ def attach_stores(
 
         n.add(
             "Store",
-            bus_names,
+            bus_names + " Store",
             bus=bus_names,
             e_cyclic=True,
             e_nom_extendable=True,
