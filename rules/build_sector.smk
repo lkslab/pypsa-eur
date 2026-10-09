@@ -1087,6 +1087,36 @@ rule build_industry_sector_ratios:
         scripts("build_industry_sector_ratios.py")
 
 
+rule build_industry_sector_ratios_endogenous:
+    cache: True
+    input:
+        code_dependencies=code_dependencies(
+            "scripts/build_industry_sector_ratios_endogenous.py"
+        ),
+        industrial_energy_demand_per_country_today=resources(
+            "industrial_energy_demand_per_country_today.csv"
+        ),
+        industrial_production_per_country=resources(
+            "industrial_production_per_country.csv"
+        ),
+        process_temperature_bands="data/ente202300981-sup-0001-suppdata-s1.xlsx",
+    output:
+        industry_sector_ratios_endogenous=resources(
+            "industry_sector_ratios_endogenous.csv"
+        ),
+    log:
+        logs("build_industry_sector_ratios_endogenous.log"),
+    threads: 1
+    resources:
+        mem_mb=1000,
+    params:
+        endogenise_sectors=config_provider("sector", "industry_t", "endogenise_sectors"),
+    message:
+        "Building endogenous industry sector energy demand ratios per temperature band"
+    script:
+        scripts("build_industry_sector_ratios_endogenous.py")
+
+
 rule build_industry_sector_ratios_intermediate:
     cache: True
     input:
@@ -1226,6 +1256,9 @@ rule build_industrial_energy_demand_per_node:
     input:
         code_dependencies=code_dependencies("scripts/build_industrial_energy_demand_per_node.py"),
         industry_sector_ratios=resources("industry_sector_ratios_{horizon}.csv"),
+        industry_sector_ratios_endogenous=resources(
+            "industry_sector_ratios_endogenous.csv"
+        ),
         industrial_production_per_node=resources("industrial_production_{horizon}.csv"),
         industrial_energy_demand_per_node_today=resources(
             "industrial_energy_demand_today.csv"
