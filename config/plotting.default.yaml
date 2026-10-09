@@ -758,7 +758,6 @@ plotting:
     non-sequestered HVC: '#8f79b5'
     waste to air: 'k'
     waste transport: '#757171'
-    waste: '#8f7f6a'
     import H2: '#db8ccd'
     import gas: '#f7a572'
     import NH3: '#e2ed74'
