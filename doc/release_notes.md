@@ -282,7 +282,7 @@
 * Added a missing regular expression anchor with `re.fullmatch` to the `create_zenodo_deposition_cli` utility
   script ([#2225](https://github.com/PyPSA/pypsa-eur/pull/2225)).
 
-* feat: Endogenous industry process heat supply. Industrial process heat demand is split into temperature bands (`heat<100`, `heat100-200`, `heat200-500`, `heat>500`) in the new rule [build_industry_sector_ratios_endogenous][], based mostly on Fleiter et al. 2025. When enabled via `sector: industry_t: endogen`, the model chooses the supply technology per band (heat pumps, electric boilers, solid biomass, methane and hydrogen) endogenously instead of relying on exogenous shares. The steel sector is excluded as its heat supply is handled separately.
+* feat: Endogenous industry process heat supply. Industrial process heat demand is split into temperature bands (`heat<100`, `heat100-200`, `heat200-500`, `heat>500`) in the new rule [build_industry_sector_ratios_endogenous][], based mostly on Fleiter et al. 2025. When enabled via `sector: industry_t: endogen`, the model chooses the supply technology per band (heat pumps, electric boilers, solid biomass, methane and hydrogen) endogenously instead of relying on exogenous shares. The steel sector is excluded as its heat supply is handled separately. On this fork the industrial heat pump draws from the AC node like the electric steam boiler (upstream moves it to the low-voltage bus), the band loads carry a ` demand` suffix so component names stay unique, and the band is spelled `heat500+`.
 
 ## PyPSA-Eur v2026.02.0 (18th February 2026)
 

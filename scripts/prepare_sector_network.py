@@ -1429,14 +1429,14 @@ def insert_electricity_distribution_grid(
     v2gs = n.links.index[n.links.carrier == "V2G"]
     n.links.loc[v2gs, "bus1"] += " low voltage"
 
+    # industrial heat pumps (endogenous industry heat bands) stay out: their
+    # bus1 is a process-heat bus and they draw from the AC node like the
+    # electric steam boiler, electrolysis and Haber-Bosch
     hps = n.links.index[
         n.links.carrier.str.contains("heat pump")
         & ~n.links.carrier.str.contains("industrial")
     ]
     n.links.loc[hps, "bus1"] += " low voltage"
-
-    industrial_hps = n.links.index[n.links.carrier.str.contains("industrial heat pump")]
-    n.links.loc[industrial_hps, "bus0"] += " low voltage"
 
     rh = n.links.index[n.links.carrier.str.contains("resistive heater")]
     n.links.loc[rh, "bus0"] += " low voltage"
@@ -4373,7 +4373,7 @@ def add_t_industry100_200(
     n.add(
         "Load",
         nodes,
-        suffix=" heat100-200 industry",
+        suffix=" heat100-200 industry demand",
         bus=nodes + " heat100-200 industry",
         carrier="heat100-200 industry",
         p_set=industrial_demand.loc[nodes, "heat100-200"] / 8760.0,
@@ -4383,7 +4383,7 @@ def add_t_industry100_200(
         n.add(
             "Link",
             nodes,
-            suffix=" solid biomass for heat100-200 industry",
+            suffix=" heat100-200 industry solid biomass",
             bus0=spatial.biomass.nodes,
             bus1=nodes + " heat100-200 industry",
             carrier="heat100-200 industry solid biomass",
@@ -4399,7 +4399,7 @@ def add_t_industry100_200(
         n.add(
             "Link",
             nodes,
-            suffix=" solid biomass for heat100-200 industry CC",
+            suffix=" heat100-200 industry solid biomass CC",
             bus0=spatial.biomass.nodes,
             bus1=nodes + " heat100-200 industry",
             bus2="co2 atmosphere",
@@ -4529,7 +4529,7 @@ def add_t_industry200_500(
     n.add(
         "Load",
         nodes,
-        suffix=" heat200-500 industry",
+        suffix=" heat200-500 industry demand",
         bus=nodes + " heat200-500 industry",
         carrier="heat200-500 industry",
         p_set=industrial_demand.loc[nodes, "heat200-500"] / 8760.0,
@@ -4665,7 +4665,7 @@ def add_t_industry500(n, nodes, industrial_demand, costs, must_run, options, spa
     n.add(
         "Load",
         nodes,
-        suffix=" heat500+ industry",
+        suffix=" heat500+ industry demand",
         bus=nodes + " heat500+ industry",
         carrier="heat500+ industry",
         p_set=industrial_demand.loc[nodes, "heat500+"] / 8760.0,
