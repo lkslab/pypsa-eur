@@ -692,6 +692,26 @@ class SectorConfig(BaseModel):
         False,
         description="Whether to include liquefaction costs for hydrogen demand in shipping.",
     )
+    shipping_endogenous: bool = Field(
+        False,
+        description="Let the model choose the shipping fuel: the fuels enabled by shipping_oil, shipping_methanol, shipping_lng and shipping_hydrogen compete on one per-node shipping demand bus and the optimiser picks the cost-minimal mix. Off by default, which keeps the fixed year-indexed shipping_*_share values.",
+    )
+    shipping_oil: bool | dict[int, bool] = Field(
+        True,
+        description="Oil is an available shipping fuel in endogenous mode (flat or year-indexed).",
+    )
+    shipping_methanol: bool | dict[int, bool] = Field(
+        True,
+        description="Methanol is an available shipping fuel in endogenous mode (flat or year-indexed).",
+    )
+    shipping_lng: bool | dict[int, bool] = Field(
+        True,
+        description="LNG (gas from the gas bus, liquefied by a per-node CH4 liquefaction link) is an available shipping fuel in endogenous mode (flat or year-indexed).",
+    )
+    shipping_hydrogen: bool | dict[int, bool] = Field(
+        False,
+        description="Hydrogen (fuel cell) is an available shipping fuel in endogenous mode (flat or year-indexed).",
+    )
     shipping_hydrogen_share: dict[int, float] = Field(
         default_factory=lambda: {
             2020: 0,
@@ -735,6 +755,30 @@ class SectorConfig(BaseModel):
     shipping_oil_efficiency: float = Field(
         0.40,
         description="The efficiency of oil-powered ships in the conversion of oil to meet shipping needs (propulsion). Base value derived from 2011.",
+    )
+    shipping_lng_share: dict[int, float] = Field(
+        default_factory=lambda: {
+            2020: 0,
+            2025: 0,
+            2030: 0,
+            2035: 0,
+            2040: 0,
+            2045: 0,
+            2050: 0,
+        },
+        description="The share of ships powered by LNG in a given year (exogenous mode only); gas is drawn from the gas bus and liquefied as in endogenous mode.",
+    )
+    shipping_lng_efficiency: float = Field(
+        0.45,
+        description="Efficiency of LNG dual-fuel ship engines per unit of fuel actually burnt (placeholder until technology-data carries a value); the useful efficiency is this times (1 - shipping_lng_methane_slip).",
+    )
+    shipping_lng_methane_slip: float = Field(
+        0.031,
+        description="Share of the LNG fuel mass that leaves the engine unburnt as methane. Default 3.1 %, the FuelEU Maritime (Regulation (EU) 2023/1805, Annex II) value for LNG Otto dual-fuel medium-speed engines; it delivers no propulsion and counts as CO2-equivalent against the CO2 limit.",
+    )
+    shipping_methane_gwp100: float = Field(
+        25.0,
+        description="100-year global warming potential of methane used to convert the LNG methane slip to CO2-equivalent (IPCC AR4, as in FuelEU Maritime).",
     )
 
     aviation_demand_factor: float = Field(
