@@ -5022,6 +5022,31 @@
                   "default": false,
                   "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
                   "type": "boolean"
+                },
+                "e_biomethanol": {
+                  "default": false,
+                  "description": "Add hydrogen-boosted biomass-to-methanol (e-biomethanol): electrolytic hydrogen turns the capturable share of the biogenic carbon of biomass-to-methanol into additional methanol, synthesised at the methanolisation hydrogen input (Zhang et al. 2026, arXiv 2604.12080). Parameters are derived from the biomass-to-methanol and methanolisation cost rows by carbon balance.",
+                  "type": "boolean"
+                },
+                "biogas_to_methanol": {
+                  "default": false,
+                  "description": "Add biogas-to-methanol (partial oxidation of raw biogas to methanol) on the biogas bus, parametrised by `sector.biogas_methanol.biogas_to_methanol`.",
+                  "type": "boolean"
+                },
+                "e_biogas_methanol": {
+                  "default": false,
+                  "description": "Add hydrogen-boosted biogas-to-methanol (e-biogas-methanol) on the biogas bus, parametrised by `sector.biogas_methanol.e_biogas_methanol`.",
+                  "type": "boolean"
+                },
+                "grey_methanol": {
+                  "default": false,
+                  "description": "Add extendable grey methanol (natural gas reforming and methanol synthesis, process CO2 vented), with the same parameters as the existing grey methanol plants.",
+                  "type": "boolean"
+                },
+                "blue_methanol": {
+                  "default": false,
+                  "description": "Add extendable blue methanol: grey methanol whose process CO2 is captured at the SMR CC capture rate and sent to CO2 storage, at the grey capital cost plus the SMR CC over SMR difference.",
+                  "type": "boolean"
                 }
               }
             },
@@ -5091,6 +5116,21 @@
         "use_electrolysis_waste_heat": {
           "default": 0.25,
           "description": "Add option for using waste heat of electrolysis in district heating networks.",
+          "type": "number"
+        },
+        "use_biofuel_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of biomass to liquid (with and without carbon capture) and electrobiofuels used in district heating networks, at the node of the biomass bus (needs `biomass_spatial`).",
+          "type": "number"
+        },
+        "use_biosng_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of BioSNG (with and without carbon capture) and e-bioSNG used in district heating networks, at the node of the biomass bus (needs `biomass_spatial`).",
+          "type": "number"
+        },
+        "use_biomethanol_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of biomass-to-methanol (with and without carbon capture), e-biomethanol, biogas-to-methanol and e-biogas-methanol used in district heating networks, at the node of the feedstock bus.",
           "type": "number"
         },
         "electricity_transmission_grid": {
@@ -5340,6 +5380,11 @@
           "description": "Add option for transforming solid biomass into synthesis gas with the same properties as natural gas with carbon capture.",
           "type": "boolean"
         },
+        "e_biosng": {
+          "default": false,
+          "description": "Add hydrogen-boosted BioSNG (e-bioSNG): electrolytic hydrogen turns the capturable share of the biogenic carbon of BioSNG into additional methane, synthesised at the methanation hydrogen input (Zhang et al. 2026, arXiv 2604.12080). Parameters are derived from the BioSNG and methanation cost rows by carbon balance.",
+          "type": "boolean"
+        },
         "bioH2": {
           "default": false,
           "description": "Add option for transforming solid biomass into hydrogen with carbon capture.",
@@ -5510,6 +5555,90 @@
               "default": 0,
               "description": "Delay the pledged decommissioning year by this number of years.",
               "type": "integer"
+            }
+          }
+        },
+        "biogas_methanol": {
+          "description": "Configuration for `sector.biogas_methanol` settings.",
+          "properties": {
+            "biogas_carbon_intensity": {
+              "default": 0.33,
+              "description": "Biogenic carbon in raw biogas per MWh of its methane (tCO2/MWh_CH4): the methane's own 0.198 plus the CO2 share of a 60/40 CH4/CO2 biogas. The methanol routes withdraw from the atmosphere only the carbon that ends in the methanol; a route whose methanol carbon would exceed this is refused.",
+              "type": "number"
+            },
+            "biogas_to_methanol": {
+              "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+              "properties": {
+                "efficiency": {
+                  "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+                  "type": "number"
+                },
+                "hydrogen_input": {
+                  "default": 0.0,
+                  "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+                  "type": "number"
+                },
+                "investment": {
+                  "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+                  "type": "number"
+                },
+                "FOM": {
+                  "description": "Fixed operation and maintenance (%/year).",
+                  "type": "number"
+                },
+                "VOM": {
+                  "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+                  "type": "number"
+                },
+                "lifetime": {
+                  "description": "Lifetime (years).",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "efficiency",
+                "investment",
+                "FOM",
+                "VOM",
+                "lifetime"
+              ]
+            },
+            "e_biogas_methanol": {
+              "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+              "properties": {
+                "efficiency": {
+                  "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+                  "type": "number"
+                },
+                "hydrogen_input": {
+                  "default": 0.0,
+                  "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+                  "type": "number"
+                },
+                "investment": {
+                  "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+                  "type": "number"
+                },
+                "FOM": {
+                  "description": "Fixed operation and maintenance (%/year).",
+                  "type": "number"
+                },
+                "VOM": {
+                  "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+                  "type": "number"
+                },
+                "lifetime": {
+                  "description": "Lifetime (years).",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "efficiency",
+                "investment",
+                "FOM",
+                "VOM",
+                "lifetime"
+              ]
             }
           }
         },
@@ -6303,6 +6432,127 @@
           "type": "boolean"
         }
       }
+    },
+    "_BiogasMethanolConfig": {
+      "description": "Configuration for `sector.biogas_methanol` settings.",
+      "properties": {
+        "biogas_carbon_intensity": {
+          "default": 0.33,
+          "description": "Biogenic carbon in raw biogas per MWh of its methane (tCO2/MWh_CH4): the methane's own 0.198 plus the CO2 share of a 60/40 CH4/CO2 biogas. The methanol routes withdraw from the atmosphere only the carbon that ends in the methanol; a route whose methanol carbon would exceed this is refused.",
+          "type": "number"
+        },
+        "biogas_to_methanol": {
+          "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+          "properties": {
+            "efficiency": {
+              "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+              "type": "number"
+            },
+            "hydrogen_input": {
+              "default": 0.0,
+              "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+              "type": "number"
+            },
+            "investment": {
+              "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+              "type": "number"
+            },
+            "FOM": {
+              "description": "Fixed operation and maintenance (%/year).",
+              "type": "number"
+            },
+            "VOM": {
+              "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+              "type": "number"
+            },
+            "lifetime": {
+              "description": "Lifetime (years).",
+              "type": "number"
+            }
+          },
+          "required": [
+            "efficiency",
+            "investment",
+            "FOM",
+            "VOM",
+            "lifetime"
+          ]
+        },
+        "e_biogas_methanol": {
+          "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+          "properties": {
+            "efficiency": {
+              "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+              "type": "number"
+            },
+            "hydrogen_input": {
+              "default": 0.0,
+              "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+              "type": "number"
+            },
+            "investment": {
+              "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+              "type": "number"
+            },
+            "FOM": {
+              "description": "Fixed operation and maintenance (%/year).",
+              "type": "number"
+            },
+            "VOM": {
+              "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+              "type": "number"
+            },
+            "lifetime": {
+              "description": "Lifetime (years).",
+              "type": "number"
+            }
+          },
+          "required": [
+            "efficiency",
+            "investment",
+            "FOM",
+            "VOM",
+            "lifetime"
+          ]
+        }
+      }
+    },
+    "_BiogasMethanolRouteConfig": {
+      "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+      "properties": {
+        "efficiency": {
+          "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+          "type": "number"
+        },
+        "hydrogen_input": {
+          "default": 0.0,
+          "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+          "type": "number"
+        },
+        "investment": {
+          "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+          "type": "number"
+        },
+        "FOM": {
+          "description": "Fixed operation and maintenance (%/year).",
+          "type": "number"
+        },
+        "VOM": {
+          "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+          "type": "number"
+        },
+        "lifetime": {
+          "description": "Lifetime (years).",
+          "type": "number"
+        }
+      },
+      "required": [
+        "efficiency",
+        "investment",
+        "FOM",
+        "VOM",
+        "lifetime"
+      ]
     },
     "_BiomassClassesConfig": {
       "description": "Configuration for `biomass.classes` settings.",
@@ -7632,6 +7882,31 @@
         "meoh_to_oa": {
           "default": false,
           "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
+          "type": "boolean"
+        },
+        "e_biomethanol": {
+          "default": false,
+          "description": "Add hydrogen-boosted biomass-to-methanol (e-biomethanol): electrolytic hydrogen turns the capturable share of the biogenic carbon of biomass-to-methanol into additional methanol, synthesised at the methanolisation hydrogen input (Zhang et al. 2026, arXiv 2604.12080). Parameters are derived from the biomass-to-methanol and methanolisation cost rows by carbon balance.",
+          "type": "boolean"
+        },
+        "biogas_to_methanol": {
+          "default": false,
+          "description": "Add biogas-to-methanol (partial oxidation of raw biogas to methanol) on the biogas bus, parametrised by `sector.biogas_methanol.biogas_to_methanol`.",
+          "type": "boolean"
+        },
+        "e_biogas_methanol": {
+          "default": false,
+          "description": "Add hydrogen-boosted biogas-to-methanol (e-biogas-methanol) on the biogas bus, parametrised by `sector.biogas_methanol.e_biogas_methanol`.",
+          "type": "boolean"
+        },
+        "grey_methanol": {
+          "default": false,
+          "description": "Add extendable grey methanol (natural gas reforming and methanol synthesis, process CO2 vented), with the same parameters as the existing grey methanol plants.",
+          "type": "boolean"
+        },
+        "blue_methanol": {
+          "default": false,
+          "description": "Add extendable blue methanol: grey methanol whose process CO2 is captured at the SMR CC capture rate and sent to CO2 storage, at the grey capital cost plus the SMR CC over SMR difference.",
           "type": "boolean"
         }
       }
@@ -12196,6 +12471,31 @@
                   "default": false,
                   "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
                   "type": "boolean"
+                },
+                "e_biomethanol": {
+                  "default": false,
+                  "description": "Add hydrogen-boosted biomass-to-methanol (e-biomethanol): electrolytic hydrogen turns the capturable share of the biogenic carbon of biomass-to-methanol into additional methanol, synthesised at the methanolisation hydrogen input (Zhang et al. 2026, arXiv 2604.12080). Parameters are derived from the biomass-to-methanol and methanolisation cost rows by carbon balance.",
+                  "type": "boolean"
+                },
+                "biogas_to_methanol": {
+                  "default": false,
+                  "description": "Add biogas-to-methanol (partial oxidation of raw biogas to methanol) on the biogas bus, parametrised by `sector.biogas_methanol.biogas_to_methanol`.",
+                  "type": "boolean"
+                },
+                "e_biogas_methanol": {
+                  "default": false,
+                  "description": "Add hydrogen-boosted biogas-to-methanol (e-biogas-methanol) on the biogas bus, parametrised by `sector.biogas_methanol.e_biogas_methanol`.",
+                  "type": "boolean"
+                },
+                "grey_methanol": {
+                  "default": false,
+                  "description": "Add extendable grey methanol (natural gas reforming and methanol synthesis, process CO2 vented), with the same parameters as the existing grey methanol plants.",
+                  "type": "boolean"
+                },
+                "blue_methanol": {
+                  "default": false,
+                  "description": "Add extendable blue methanol: grey methanol whose process CO2 is captured at the SMR CC capture rate and sent to CO2 storage, at the grey capital cost plus the SMR CC over SMR difference.",
+                  "type": "boolean"
                 }
               }
             },
@@ -12265,6 +12565,21 @@
         "use_electrolysis_waste_heat": {
           "default": 0.25,
           "description": "Add option for using waste heat of electrolysis in district heating networks.",
+          "type": "number"
+        },
+        "use_biofuel_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of biomass to liquid (with and without carbon capture) and electrobiofuels used in district heating networks, at the node of the biomass bus (needs `biomass_spatial`).",
+          "type": "number"
+        },
+        "use_biosng_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of BioSNG (with and without carbon capture) and e-bioSNG used in district heating networks, at the node of the biomass bus (needs `biomass_spatial`).",
+          "type": "number"
+        },
+        "use_biomethanol_waste_heat": {
+          "default": 0.25,
+          "description": "Share of the waste heat of biomass-to-methanol (with and without carbon capture), e-biomethanol, biogas-to-methanol and e-biogas-methanol used in district heating networks, at the node of the feedstock bus.",
           "type": "number"
         },
         "electricity_transmission_grid": {
@@ -12514,6 +12829,11 @@
           "description": "Add option for transforming solid biomass into synthesis gas with the same properties as natural gas with carbon capture.",
           "type": "boolean"
         },
+        "e_biosng": {
+          "default": false,
+          "description": "Add hydrogen-boosted BioSNG (e-bioSNG): electrolytic hydrogen turns the capturable share of the biogenic carbon of BioSNG into additional methane, synthesised at the methanation hydrogen input (Zhang et al. 2026, arXiv 2604.12080). Parameters are derived from the BioSNG and methanation cost rows by carbon balance.",
+          "type": "boolean"
+        },
         "bioH2": {
           "default": false,
           "description": "Add option for transforming solid biomass into hydrogen with carbon capture.",
@@ -12684,6 +13004,90 @@
               "default": 0,
               "description": "Delay the pledged decommissioning year by this number of years.",
               "type": "integer"
+            }
+          }
+        },
+        "biogas_methanol": {
+          "description": "Configuration for `sector.biogas_methanol` settings.",
+          "properties": {
+            "biogas_carbon_intensity": {
+              "default": 0.33,
+              "description": "Biogenic carbon in raw biogas per MWh of its methane (tCO2/MWh_CH4): the methane's own 0.198 plus the CO2 share of a 60/40 CH4/CO2 biogas. The methanol routes withdraw from the atmosphere only the carbon that ends in the methanol; a route whose methanol carbon would exceed this is refused.",
+              "type": "number"
+            },
+            "biogas_to_methanol": {
+              "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+              "properties": {
+                "efficiency": {
+                  "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+                  "type": "number"
+                },
+                "hydrogen_input": {
+                  "default": 0.0,
+                  "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+                  "type": "number"
+                },
+                "investment": {
+                  "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+                  "type": "number"
+                },
+                "FOM": {
+                  "description": "Fixed operation and maintenance (%/year).",
+                  "type": "number"
+                },
+                "VOM": {
+                  "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+                  "type": "number"
+                },
+                "lifetime": {
+                  "description": "Lifetime (years).",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "efficiency",
+                "investment",
+                "FOM",
+                "VOM",
+                "lifetime"
+              ]
+            },
+            "e_biogas_methanol": {
+              "description": "One biogas-to-methanol route of `sector.biogas_methanol`.",
+              "properties": {
+                "efficiency": {
+                  "description": "Methanol output per biogas input (MWh_MeOH/MWh_CH4, biogas counted by its methane content as on the biogas bus).",
+                  "type": "number"
+                },
+                "hydrogen_input": {
+                  "default": 0.0,
+                  "description": "Hydrogen input per biogas input (MWh_H2/MWh_CH4).",
+                  "type": "number"
+                },
+                "investment": {
+                  "description": "Investment per methanol output capacity (EUR/kW_MeOH), excluding the digester, whose cost the link carries from the `biogas` cost row as biogas upgrading does.",
+                  "type": "number"
+                },
+                "FOM": {
+                  "description": "Fixed operation and maintenance (%/year).",
+                  "type": "number"
+                },
+                "VOM": {
+                  "description": "Variable operation and maintenance (EUR/MWh_MeOH).",
+                  "type": "number"
+                },
+                "lifetime": {
+                  "description": "Lifetime (years).",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "efficiency",
+                "investment",
+                "FOM",
+                "VOM",
+                "lifetime"
+              ]
             }
           }
         },

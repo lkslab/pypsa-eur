@@ -19,7 +19,11 @@ import xarray as xr
 
 from scripts.build_energy_totals import cartesian
 from scripts.definitions.heat_system import HeatSystem
-from scripts.prepare_sector_network import cluster_heat_buses, define_spatial
+from scripts.prepare_sector_network import (
+    cluster_heat_buses,
+    define_spatial,
+    grey_methanol_attrs,
+)
 
 logger = logging.getLogger(__name__)
 cc = coco.CountryConverter()
@@ -947,7 +951,8 @@ def add_existing_industry(
     if options["methanol"]:
         meoh = units_of("grey methanol")
         logger.info(f"Adding {len(meoh)} existing grey methanol plants.")
-        efficiency = costs.at["grey methanol synthesis", "efficiency"]
+        attrs = grey_methanol_attrs(costs)
+        efficiency = attrs["efficiency"]
         n.add(
             "Link",
             meoh.index,
@@ -963,12 +968,10 @@ def add_existing_industry(
             ).values,
             p_nom_extendable=False,
             efficiency=efficiency,
-            efficiency2=costs.at["gas", "CO2 intensity"]
-            - efficiency * costs.at["methanol", "CO2 intensity"],
-            capital_cost=costs.at["SMR", "capital_cost"]
-            + costs.at["methanolisation", "capital_cost"] * efficiency,
+            efficiency2=attrs["process_co2"],
+            capital_cost=attrs["capital_cost"],
             build_year=meoh.grouping_year.values,
-            lifetime=costs.at["SMR", "lifetime"],
+            lifetime=attrs["lifetime"],
         )
 
     if "steel" in subsectors:
