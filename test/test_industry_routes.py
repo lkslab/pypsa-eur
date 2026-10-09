@@ -214,8 +214,8 @@ def test_existing_industry_plants_become_dated_links(tmp_path):
     n.add("Bus", "EU NH3", carrier="NH3")
     plants = pd.DataFrame(
         {
-            "bus": ["N0", "N0", "N0", "N1", "N0", "N0"],
-            "country": ["NL"] * 6,
+            "bus": ["N0", "N0", "N0", "N1", "N0", "N0", "N0"],
+            "country": ["NL"] * 7,
             "carrier": [
                 "BOF",
                 "BOF",
@@ -223,10 +223,11 @@ def test_existing_industry_plants_become_dated_links(tmp_path):
                 "cement",
                 "Haber-Bosch",
                 "grey methanol",
+                "cement",
             ],
-            "p_set": [1.0e6, 0.5e6, 0.2e6, 1.5e6, 0.4e6, 0.1e6],
-            "build_year": [2012, float("nan"), 2018, 2005, 1998, 2001],
-            "Out": [2030, 2030, 0, 0, 0, 0],
+            "p_set": [1.0e6, 0.5e6, 0.2e6, 1.5e6, 0.4e6, 0.1e6, 0.8e6],
+            "build_year": [2012, float("nan"), 2018, 2005, 1998, 2001, 2012],
+            "Out": [2030, 2030, 0, 0, 0, 0, 0],
         }
     )
     fn = tmp_path / "industry_plants.csv"
@@ -256,6 +257,13 @@ def test_existing_industry_plants_become_dated_links(tmp_path):
     # cement plants only where the network has a cement demand: N1 has none
     assert "N1 clinker kiln-2005" not in n.links.index
     assert "N1 cement production-2005" not in n.links.index
+    # the clinker capacity sizes an existing kiln (heat) and its grinding (clinker)
+    assert n.links.at["N0 clinker kiln-2010", "p_nom"] == pytest.approx(
+        0.8e6 * 0.9444 / 8760
+    )
+    assert n.links.at["N0 cement production-2010", "p_nom"] == pytest.approx(
+        0.8e6 / 8760
+    )
     hb = n.links.loc["N0 Haber-Bosch-1995"]
     assert hb.bus1 == "EU NH3" and hb.p_nom == pytest.approx(
         0.4e6 * 5.166 / 0.25 / 8760

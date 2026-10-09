@@ -876,8 +876,9 @@ def add_existing_industry(
         elec_input = costs.at["cement dry clinker", "electricity-input"]
         clinker_input = costs.at["cement finishing", "clinker-input"]
         calcination = options["cement"]["calcination_emissions"]
-        # t cement/a -> t clinker/a -> MW_th of kiln heat
-        p_nom_kiln = cement["p_set"] * clinker_input * heat_input / 8760
+        # p_set is the integrated plants' clinker capacity in t/a: MW_th of kiln
+        # heat, and t clinker/h through the plant's own grinding
+        p_nom_kiln = cement["p_set"] * heat_input / 8760
         n.add(
             "Link",
             cement.index.str.replace("cement-", "clinker kiln-"),
@@ -905,7 +906,7 @@ def add_existing_industry(
             bus1=(cement.bus + " cement").values,
             bus2=cement.bus.values,
             carrier="cement finishing",
-            p_nom=(cement["p_set"] * clinker_input / 8760).values,
+            p_nom=(cement["p_set"] / 8760).values,
             p_nom_extendable=False,
             capital_cost=costs.at["cement finishing", "capital_cost"] / clinker_input,
             efficiency=1 / clinker_input,

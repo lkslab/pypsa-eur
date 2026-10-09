@@ -9,8 +9,9 @@ Description
 Builds one table of existing industry production units, ``industry_plants.csv``,
 with the columns ``bus`` (model region), ``country``, ``carrier`` (the route:
 ``BOF``, ``gas DRI``, ``Haber-Bosch``, ``grey methanol``, ``cement``), ``p_set``
-(production in t/a), ``build_year`` and ``Out`` (pledged decommissioning year,
-0 when none). ``add_existing_baseyear`` turns the rows into brownfield links when
+(production in t/a; for ``cement`` the plant's clinker capacity in t/a, since a
+grinding-only site has no kiln and is left out), ``build_year`` and ``Out``
+(pledged decommissioning year, 0 when none). ``add_existing_baseyear`` turns the rows into brownfield links when
 ``sector.endogenous_sectors.enable`` is set.
 
 Sources: the Fraunhofer ISI industry site database (Neuwirth et al.) for steel,
@@ -72,10 +73,18 @@ def _assign_regions(df: pd.DataFrame, regions: gpd.GeoDataFrame) -> pd.DataFrame
 def prepare_gem_cement_plants(
     fn: str, regions: gpd.GeoDataFrame, countries: list[str]
 ) -> pd.DataFrame:
-    """Operating cement plants from the GEM Global Cement and Concrete Tracker."""
+    """
+    Operating integrated cement plants from the GEM Global Cement and Concrete
+    Tracker, with their clinker capacity in t/a. Grinding-only sites have no kiln
+    (NL's three sites since ENCI Maastricht closed in 2019) and are left out.
+    """
     df = pd.read_excel(fn, sheet_name="Plant Data", na_values=["N/A", "unknown", ">0"])
     df["country"] = df["Country/Area"].map(country_to_code)
-    df = df[df["country"].isin(countries) & (df["Operating status"] == "operating")]
+    df = df[
+        df["country"].isin(countries)
+        & (df["Operating status"] == "operating")
+        & (df["Plant type"] == "integrated")
+    ]
 
     latlon = df["Coordinates"].str.split(",", expand=True)
     df = df.assign(
@@ -84,10 +93,11 @@ def prepare_gem_cement_plants(
         build_year=pd.to_numeric(
             df["Start date"].astype(str).str.split("-").str[0], errors="coerce"
         ),
-        p_set=df["Cement Capacity (millions metric tonnes per annum)"] * 1e6,
+        p_set=df["Clinker Capacity (millions metric tonnes per annum)"].fillna(0) * 1e6,
         carrier="cement",
         Out=0,
     )
+    df = df[df["p_set"] > 0]
     df = _assign_regions(df, regions)
     return df[COLUMNS].reset_index(drop=True)
 
