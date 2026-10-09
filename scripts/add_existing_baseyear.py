@@ -791,6 +791,256 @@ def add_heating_capacities_installed_before_baseyear(
             )
 
 
+def add_existing_industry(
+    n: pypsa.Network,
+    options: dict,
+    plant_fn: str,
+    grouping_years: list[int],
+    baseyear: int,
+    costs: pd.DataFrame,
+    spatial: SimpleNamespace,
+    industry_params: dict,
+) -> None:
+    """
+    Add today's industry plants as non-extendable links with a build year.
+
+    Port of PyPSA/pypsa-eur#1719. Cement kilns, blast furnaces and gas DRI
+    furnaces are added only for the subsectors listed in
+    ``sector.endogenous_sectors.subsectors``; Haber-Bosch plants when
+    ``sector.ammonia`` is set and grey methanol plants when ``sector.methanol``
+    is. Capacities are grouped by region, route and build-year interval; a
+    missing build year takes the route's mean. Blast furnaces retire at their
+    pledged phase-out year (``Out``) when ``sector.steel_bof.pledge`` is set.
+
+    Parameters
+    ----------
+    n : pypsa.Network
+        Network to modify
+    options : dict
+        The ``sector`` config chapter
+    plant_fn : str
+        ``industry_plants.csv`` from ``build_industry_plants``
+    grouping_years : list[int]
+        ``existing_capacities.grouping_years_industry``
+    baseyear : int
+        First planning horizon
+    costs : pd.DataFrame
+        Technology costs
+    spatial : SimpleNamespace
+        Carrier bus names from ``define_spatial``
+    industry_params : dict
+        The ``industry`` config chapter (``MWh_NH3_per_tNH3``, ``MWh_MeOH_per_tMeOH``)
+    """
+    logger.info("Adding existing industry plants")
+
+    plants = pd.read_csv(plant_fn)
+    plants["Out"] = plants["Out"].fillna(0).astype(int)
+    plants["build_year"] = plants["build_year"].fillna(
+        plants.groupby("carrier")["build_year"].transform("mean").round()
+    )
+    plants = plants[plants["build_year"] < baseyear]
+    grouping_years = np.asarray(sorted(grouping_years))
+    idx = np.clip(
+        np.searchsorted(grouping_years, plants["build_year"], side="right") - 1,
+        0,
+        len(grouping_years) - 1,
+    )
+    plants["grouping_year"] = grouping_years[idx]
+    plants = plants.groupby(
+        ["bus", "country", "carrier", "grouping_year", "Out"], as_index=False
+    )["p_set"].sum()
+
+    def units_of(route: str) -> pd.DataFrame:
+        df = plants[plants.carrier == route].copy()
+        df.index = [
+            f"{bus} {route}-{year}" for bus, year in zip(df.bus, df.grouping_year)
+        ]
+        return df
+
+    def gas_bus(buses: pd.Series) -> list[str]:
+        return list(spatial.gas.df.loc[buses, "nodes"].values)
+
+    endogenous = options["endogenous_sectors"]
+    subsectors = endogenous["subsectors"] if endogenous["enable"] else []
+
+    if "cement" in subsectors:
+        cement = units_of("cement")
+        # only where the composed network has a cement demand
+        loads = n.loads[(n.loads.carrier == "cement") & (n.loads.p_set > 0)]
+        with_demand = loads.bus.str.replace(" cement", "", regex=False)
+        cement = cement[cement.bus.isin(with_demand)]
+        logger.info(f"Adding {len(cement)} existing cement kilns.")
+
+        heat_input = costs.at["cement dry clinker", "heat-input"]
+        gas_input = costs.at["cement dry clinker", "gas-input"]
+        elec_input = costs.at["cement dry clinker", "electricity-input"]
+        clinker_input = costs.at["cement finishing", "clinker-input"]
+        calcination = options["cement"]["calcination_emissions"]
+        # t cement/a -> t clinker/a -> MW_th of kiln heat
+        p_nom_kiln = cement["p_set"] * clinker_input * heat_input / 8760
+        n.add(
+            "Link",
+            cement.index.str.replace("cement-", "clinker kiln-"),
+            bus0=(cement.bus + " cement heat").values,
+            bus1=(cement.bus + " clinker").values,
+            bus2=gas_bus(cement.bus),
+            bus3=cement.bus.values,
+            bus4=(cement.bus + " cement emission").values,
+            carrier="cement kiln",
+            p_nom=p_nom_kiln.values,
+            p_nom_extendable=False,
+            capital_cost=costs.at["cement dry clinker", "capital_cost"] / heat_input,
+            efficiency=1 / heat_input,
+            efficiency2=-gas_input / heat_input,
+            efficiency3=-elec_input / heat_input,
+            efficiency4=(calcination + costs.at["gas", "CO2 intensity"] * gas_input)
+            / heat_input,
+            build_year=cement.grouping_year.values,
+            lifetime=costs.at["cement dry clinker", "lifetime"],
+        )
+        n.add(
+            "Link",
+            cement.index.str.replace("cement-", "cement production-"),
+            bus0=(cement.bus + " clinker").values,
+            bus1=(cement.bus + " cement").values,
+            bus2=cement.bus.values,
+            carrier="cement finishing",
+            p_nom=(cement["p_set"] * clinker_input / 8760).values,
+            p_nom_extendable=False,
+            capital_cost=costs.at["cement finishing", "capital_cost"] / clinker_input,
+            efficiency=1 / clinker_input,
+            efficiency2=-costs.at["cement finishing", "electricity-input"]
+            / clinker_input,
+            build_year=cement.grouping_year.values,
+            lifetime=costs.at["cement finishing", "lifetime"],
+        )
+
+    if options["ammonia"]:
+        ammonia = units_of("Haber-Bosch")
+        logger.info(f"Adding {len(ammonia)} existing Haber-Bosch plants.")
+        elec_input = costs.at["Haber-Bosch", "electricity-input"]
+        n.add(
+            "Link",
+            ammonia.index,
+            bus0=ammonia.bus.values,
+            bus1=(ammonia.bus + " NH3").values
+            if options["ammonia"] == "regional"
+            else "EU NH3",
+            bus2=(ammonia.bus + " H2").values,
+            carrier="Haber-Bosch",
+            p_nom=(
+                ammonia["p_set"]
+                * industry_params["MWh_NH3_per_tNH3"]
+                / elec_input
+                / 8760
+            ).values,
+            p_nom_extendable=False,
+            efficiency=1 / elec_input,
+            efficiency2=-costs.at["Haber-Bosch", "hydrogen-input"] / elec_input,
+            capital_cost=costs.at["Haber-Bosch", "capital_cost"] / elec_input,
+            marginal_cost=costs.at["Haber-Bosch", "VOM"] / elec_input,
+            build_year=ammonia.grouping_year.values,
+            lifetime=costs.at["Haber-Bosch", "lifetime"],
+        )
+
+    if options["methanol"]:
+        meoh = units_of("grey methanol")
+        logger.info(f"Adding {len(meoh)} existing grey methanol plants.")
+        efficiency = costs.at["grey methanol synthesis", "efficiency"]
+        n.add(
+            "Link",
+            meoh.index,
+            bus0=gas_bus(meoh.bus),
+            bus1=spatial.methanol.nodes[0],
+            bus2="co2 atmosphere",
+            carrier="grey methanol",
+            p_nom=(
+                meoh["p_set"]
+                * industry_params["MWh_MeOH_per_tMeOH"]
+                / efficiency
+                / 8760
+            ).values,
+            p_nom_extendable=False,
+            efficiency=efficiency,
+            efficiency2=costs.at["gas", "CO2 intensity"]
+            - efficiency * costs.at["methanol", "CO2 intensity"],
+            capital_cost=costs.at["SMR", "capital_cost"]
+            + costs.at["methanolisation", "capital_cost"] * efficiency,
+            build_year=meoh.grouping_year.values,
+            lifetime=costs.at["SMR", "lifetime"],
+        )
+
+    if "steel" in subsectors:
+        dri = units_of("gas DRI")
+        logger.info(f"Adding {len(dri)} existing gas DRI furnaces.")
+        elec_input = costs.at[
+            "hydrogen direct iron reduction furnace", "electricity-input"
+        ]
+        n.add(
+            "Link",
+            dri.index,
+            bus0=dri.bus.values,
+            bus1=(dri.bus + " hbi").values
+            if not options["hbi_relocation"]
+            else "EU hbi",
+            bus2=(dri.bus + " DRI reduction").values,
+            carrier="DRI",
+            p_nom=(dri["p_set"] * elec_input / 8760).values,
+            p_nom_extendable=False,
+            efficiency=1 / elec_input,
+            efficiency2=-1 / elec_input,
+            capital_cost=costs.at[
+                "hydrogen direct iron reduction furnace", "capital_cost"
+            ]
+            / elec_input,
+            marginal_cost=costs.at["iron ore DRI-ready", "commodity"]
+            * costs.at["hydrogen direct iron reduction furnace", "ore-input"]
+            / elec_input,
+            build_year=dri.grouping_year.values,
+            lifetime=costs.at["hydrogen direct iron reduction furnace", "lifetime"],
+        )
+
+        bof = plants[plants.carrier == "BOF"].copy()
+        catalogue_lifetime = costs.at["blast furnace-basic oxygen furnace", "lifetime"]
+        if options["steel_bof"]["pledge"]:
+            lifetime = (
+                bof["Out"] - bof["grouping_year"] + options["steel_bof"]["pledge_delay"]
+            ).where(bof["Out"] > 0, catalogue_lifetime)
+            lifetime = lifetime.where(lifetime > 0, catalogue_lifetime)
+        else:
+            bof = bof.groupby(
+                ["bus", "country", "carrier", "grouping_year"], as_index=False
+            )["p_set"].sum()
+            bof["Out"] = 0
+            lifetime = pd.Series(catalogue_lifetime, index=bof.index)
+        bof.index = [
+            f"{bus} BOF-{year}-{out}"
+            for bus, year, out in zip(bof.bus, bof.grouping_year, bof.Out)
+        ]
+        lifetime.index = bof.index
+        logger.info(f"Adding {len(bof)} existing blast furnaces.")
+        coal_input = costs.at["blast furnace-basic oxygen furnace", "coal-input"]
+        n.add(
+            "Link",
+            bof.index,
+            bus0=spatial.coal.nodes[0],
+            bus1=(bof.bus + " steel").values,
+            bus2=(bof.bus + " BOF emission").values,
+            carrier="BOF",
+            p_nom=(bof["p_set"] * coal_input / 8760).values,
+            p_nom_extendable=False,
+            efficiency=1 / coal_input,
+            efficiency2=costs.at["coal", "CO2 intensity"],
+            marginal_cost=costs.at["iron ore DRI-ready", "commodity"]
+            * costs.at["blast furnace-basic oxygen furnace", "ore-input"]
+            / coal_input,
+            capital_cost=costs.at["blast furnace-basic oxygen furnace", "capital_cost"]
+            / coal_input,
+            build_year=bof.grouping_year.values,
+            lifetime=lifetime.values,
+        )
+
+
 def main(
     n: pypsa.Network,
     inputs,
@@ -843,6 +1093,22 @@ def main(
             capacity_threshold=params.existing_capacities["threshold_capacity"],
             use_electricity_distribution_grid=options["electricity_distribution_grid"],
             spatial=spatial,
+        )
+
+    if (
+        options["industry"]
+        and options["endogenous_sectors"]["enable"]
+        and inputs.get("industry_plants")
+    ):
+        add_existing_industry(
+            n=n,
+            options=options,
+            plant_fn=inputs.industry_plants,
+            grouping_years=params.existing_capacities["grouping_years_industry"],
+            baseyear=baseyear,
+            costs=costs,
+            spatial=spatial,
+            industry_params=params.industry,
         )
 
     # Set defaults for missing missing values

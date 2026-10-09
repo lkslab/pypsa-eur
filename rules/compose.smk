@@ -76,6 +76,15 @@ def get_compose_inputs(w):
             industrial_demand=resources("industrial_energy_demand_{horizon}.csv"),
             hourly_heat_demand_total=resources("hourly_heat_demand_total.nc"),
             industrial_production=resources("industrial_production_{horizon}.csv"),
+            industrial_electricity_profile=resources(
+                "industrial_electricity_profile_{horizon}.csv"
+            ),
+            industry_plants=(
+                resources("industry_plants.csv")
+                if cfg["sector"]["endogenous_sectors"]["enable"]
+                and foresight != "overnight"
+                else []
+            ),
             district_heat_share=resources("district_heat_share_{horizon}.csv"),
             heating_efficiencies=resources("heating_efficiencies.csv"),
             existing_heating_distribution=resources(
@@ -192,13 +201,13 @@ def get_compose_inputs(w):
 
 # Main composition rule - combines all network building steps
 rule compose_network:
-    cache: True
     input:
         unpack(get_compose_inputs),
     output:
         resources("networks/composed_{horizon}.nc"),
     log:
         logs("compose_network_{horizon}.log"),
+    cache: True
     threads: 1
     resources:
         mem_mb=10000,

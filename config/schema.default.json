@@ -1116,6 +1116,26 @@
             }
           }
         },
+        "ffe_industry_load_profiles": {
+          "description": "Configuration for a single data source.",
+          "properties": {
+            "source": {
+              "default": "archive",
+              "description": "Source of the data. 'archive' retrieves pre-built data, 'primary' retrieves from primary source.",
+              "enum": [
+                "archive",
+                "primary",
+                "build"
+              ],
+              "type": "string"
+            },
+            "version": {
+              "default": "latest",
+              "description": "Version of the data to use. Uses the specific 'version' for the selected 'source' or the dataset tagged 'latest' for this source.",
+              "type": "string"
+            }
+          }
+        },
         "instrat_co2_prices": {
           "description": "Configuration for a single data source.",
           "properties": {
@@ -2498,6 +2518,13 @@
           },
           "type": "array"
         },
+        "grouping_years_industry": {
+          "description": "Intervals to group existing industry plants (steel, cement, ammonia, methanol) by build year.",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
         "threshold_capacity": {
           "default": 10,
           "description": "Capacities (MW) of generators and links below threshold are removed during add_existing_capacities.",
@@ -2769,6 +2796,11 @@
         "hotmaps_locate_missing": {
           "default": false,
           "description": "Locate industrial sites without valid locations based on city and countries.",
+          "type": "boolean"
+        },
+        "temporal_electricity_industry_load": {
+          "default": false,
+          "description": "Shape the industry electricity load by hourly branch profiles (FfE, Germany 2017, projected to every country with its own holidays) instead of a flat load. The per-node profile is always built; the switch only decides whether compose_network uses it.",
           "type": "boolean"
         },
         "reference_year": {
@@ -4908,6 +4940,11 @@
                   "default": false,
                   "description": "Add biomass to methanol with carbon capture.",
                   "type": "boolean"
+                },
+                "meoh_to_oa": {
+                  "default": false,
+                  "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
+                  "type": "boolean"
                 }
               }
             },
@@ -5350,6 +5387,57 @@
               },
               "description": "Price for importing renewable energy of carrier.",
               "type": "object"
+            }
+          }
+        },
+        "endogenous_sectors": {
+          "description": "Configuration for `sector.endogenous_sectors` settings.",
+          "properties": {
+            "enable": {
+              "default": false,
+              "description": "Model the production routes of the listed energy-intensive industry subsectors endogenously (material demand buses with competing production links) instead of as exogenous fuel shares. Off by default.",
+              "type": "boolean"
+            },
+            "subsectors": {
+              "description": "Industry subsectors whose production routes are modelled endogenously when `enable` is true.",
+              "items": {
+                "enum": [
+                  "steel",
+                  "cement"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "hbi_relocation": {
+          "default": false,
+          "description": "Pool hot briquetted iron (HBI) on one European bus so iron ore reduction can relocate away from the steel site; per-node HBI buses otherwise.",
+          "type": "boolean"
+        },
+        "steel_bof": {
+          "description": "Configuration for `sector.steel_bof` settings.",
+          "properties": {
+            "pledge": {
+              "default": true,
+              "description": "Decommission existing coal blast furnaces at the phase-out year pledged by their operator (GEM steel tracker) instead of at the end of their technical lifetime.",
+              "type": "boolean"
+            },
+            "pledge_delay": {
+              "default": 0,
+              "description": "Delay the pledged decommissioning year by this number of years.",
+              "type": "integer"
+            }
+          }
+        },
+        "cement": {
+          "description": "Configuration for `sector.cement` settings.",
+          "properties": {
+            "calcination_emissions": {
+              "default": 0.5071,
+              "description": "Process CO2 released by calcination per tonne of clinker (tCO2/t clinker), IPCC EFDB default; used by the endogenous cement kiln until technology-data ships the value.",
+              "type": "number"
             }
           }
         }
@@ -6184,6 +6272,16 @@
         }
       }
     },
+    "_CementConfig": {
+      "description": "Configuration for `sector.cement` settings.",
+      "properties": {
+        "calcination_emissions": {
+          "default": 0.5071,
+          "description": "Process CO2 released by calcination per tonne of clinker (tCO2/t clinker), IPCC EFDB default; used by the endogenous cement kiln until technology-data ships the value.",
+          "type": "number"
+        }
+      }
+    },
     "_CheckObjectiveConfig": {
       "description": "Configuration for `solving.check_objective` settings.",
       "properties": {
@@ -6732,6 +6830,27 @@
           "default": 90,
           "description": "Rolling window (in days) for smoothing the historical CO2 prices when `dynamic` is set to True.",
           "type": "integer"
+        }
+      }
+    },
+    "_EndogenousSectorsConfig": {
+      "description": "Configuration for `sector.endogenous_sectors` settings.",
+      "properties": {
+        "enable": {
+          "default": false,
+          "description": "Model the production routes of the listed energy-intensive industry subsectors endogenously (material demand buses with competing production links) instead of as exogenous fuel shares. Off by default.",
+          "type": "boolean"
+        },
+        "subsectors": {
+          "description": "Industry subsectors whose production routes are modelled endogenously when `enable` is true.",
+          "items": {
+            "enum": [
+              "steel",
+              "cement"
+            ],
+            "type": "string"
+          },
+          "type": "array"
         }
       }
     },
@@ -7406,6 +7525,11 @@
         "biomass_to_methanol_cc": {
           "default": false,
           "description": "Add biomass to methanol with carbon capture.",
+          "type": "boolean"
+        },
+        "meoh_to_oa": {
+          "default": false,
+          "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
           "type": "boolean"
         }
       }
@@ -8570,6 +8694,21 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "_SteelBOFConfig": {
+      "description": "Configuration for `sector.steel_bof` settings.",
+      "properties": {
+        "pledge": {
+          "default": true,
+          "description": "Decommission existing coal blast furnaces at the phase-out year pledged by their operator (GEM steel tracker) instead of at the end of their technical lifetime.",
+          "type": "boolean"
+        },
+        "pledge_delay": {
+          "default": 0,
+          "description": "Delay the pledged decommissioning year by this number of years.",
+          "type": "integer"
         }
       }
     },
@@ -11131,6 +11270,13 @@
           },
           "type": "array"
         },
+        "grouping_years_industry": {
+          "description": "Intervals to group existing industry plants (steel, cement, ammonia, methanol) by build year.",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
         "threshold_capacity": {
           "default": 10,
           "description": "Capacities (MW) of generators and links below threshold are removed during add_existing_capacities.",
@@ -11856,6 +12002,11 @@
                   "default": false,
                   "description": "Add biomass to methanol with carbon capture.",
                   "type": "boolean"
+                },
+                "meoh_to_oa": {
+                  "default": false,
+                  "description": "Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
+                  "type": "boolean"
                 }
               }
             },
@@ -12300,6 +12451,57 @@
               "type": "object"
             }
           }
+        },
+        "endogenous_sectors": {
+          "description": "Configuration for `sector.endogenous_sectors` settings.",
+          "properties": {
+            "enable": {
+              "default": false,
+              "description": "Model the production routes of the listed energy-intensive industry subsectors endogenously (material demand buses with competing production links) instead of as exogenous fuel shares. Off by default.",
+              "type": "boolean"
+            },
+            "subsectors": {
+              "description": "Industry subsectors whose production routes are modelled endogenously when `enable` is true.",
+              "items": {
+                "enum": [
+                  "steel",
+                  "cement"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "hbi_relocation": {
+          "default": false,
+          "description": "Pool hot briquetted iron (HBI) on one European bus so iron ore reduction can relocate away from the steel site; per-node HBI buses otherwise.",
+          "type": "boolean"
+        },
+        "steel_bof": {
+          "description": "Configuration for `sector.steel_bof` settings.",
+          "properties": {
+            "pledge": {
+              "default": true,
+              "description": "Decommission existing coal blast furnaces at the phase-out year pledged by their operator (GEM steel tracker) instead of at the end of their technical lifetime.",
+              "type": "boolean"
+            },
+            "pledge_delay": {
+              "default": 0,
+              "description": "Delay the pledged decommissioning year by this number of years.",
+              "type": "integer"
+            }
+          }
+        },
+        "cement": {
+          "description": "Configuration for `sector.cement` settings.",
+          "properties": {
+            "calcination_emissions": {
+              "default": 0.5071,
+              "description": "Process CO2 released by calcination per tonne of clinker (tCO2/t clinker), IPCC EFDB default; used by the endogenous cement kiln until technology-data ships the value.",
+              "type": "number"
+            }
+          }
         }
       }
     },
@@ -12508,6 +12710,11 @@
         "hotmaps_locate_missing": {
           "default": false,
           "description": "Locate industrial sites without valid locations based on city and countries.",
+          "type": "boolean"
+        },
+        "temporal_electricity_industry_load": {
+          "default": false,
+          "description": "Shape the industry electricity load by hourly branch profiles (FfE, Germany 2017, projected to every country with its own holidays) instead of a flat load. The per-node profile is always built; the switch only decides whether compose_network uses it.",
           "type": "boolean"
         },
         "reference_year": {
@@ -13615,6 +13822,26 @@
           }
         },
         "gem_gcct": {
+          "description": "Configuration for a single data source.",
+          "properties": {
+            "source": {
+              "default": "archive",
+              "description": "Source of the data. 'archive' retrieves pre-built data, 'primary' retrieves from primary source.",
+              "enum": [
+                "archive",
+                "primary",
+                "build"
+              ],
+              "type": "string"
+            },
+            "version": {
+              "default": "latest",
+              "description": "Version of the data to use. Uses the specific 'version' for the selected 'source' or the dataset tagged 'latest' for this source.",
+              "type": "string"
+            }
+          }
+        },
+        "ffe_industry_load_profiles": {
           "description": "Configuration for a single data source.",
           "properties": {
             "source": {

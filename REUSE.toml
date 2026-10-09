@@ -134,3 +134,9 @@ path = [
 ]
 SPDX-FileCopyrightText = "Fleiter et al."
 SPDX-License-Identifier = "CC-BY-4.0"
+[[annotations]]
+path = [
+    "data/1-s2.0-S0196890424010586-mmc2.xlsx",
+]
+SPDX-FileCopyrightText = "Neuwirth et al. (Fraunhofer ISI), doi:10.1016/j.enconman.2024.119117"
+SPDX-License-Identifier = "CC-BY-4.0"

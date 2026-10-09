@@ -212,6 +212,10 @@ class IndustryConfig(ConfigModel):
         False,
         description="Locate industrial sites without valid locations based on city and countries.",
     )
+    temporal_electricity_industry_load: bool = Field(
+        False,
+        description="Shape the industry electricity load by hourly branch profiles (FfE, Germany 2017, projected to every country with its own holidays) instead of a flat load. The per-node profile is always built; the switch only decides whether compose_network uses it.",
+    )
     reference_year: int = Field(
         2023,
         description="The year used as the baseline for industrial energy demand and production. Data extracted from `JRC-IDEES 2015 <https://data.jrc.ec.europa.eu/dataset/jrc-10110-10001>`_.",

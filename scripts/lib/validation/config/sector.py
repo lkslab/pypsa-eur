@@ -8,7 +8,7 @@ Sector configuration.
 See docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#sector
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -221,6 +221,10 @@ class _MethanolConfig(BaseModel):
     biomass_to_methanol: bool = Field(True, description="Add biomass to methanol.")
     biomass_to_methanol_cc: bool = Field(
         False, description="Add biomass to methanol with carbon capture."
+    )
+    meoh_to_oa: bool = Field(
+        False,
+        description="Add methanol-to-olefins/aromatics as a way to meet the naphtha demand of the high-value-chemicals industry.",
     )
 
 
@@ -481,6 +485,40 @@ class _IndustryTConfig(BaseModel):
     )
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class _EndogenousSectorsConfig(BaseModel):
+    """Configuration for `sector.endogenous_sectors` settings."""
+
+    enable: bool = Field(
+        False,
+        description="Model the production routes of the listed energy-intensive industry subsectors endogenously (material demand buses with competing production links) instead of as exogenous fuel shares. Off by default.",
+    )
+    subsectors: list[Literal["steel", "cement"]] = Field(
+        default_factory=lambda: ["steel", "cement"],
+        description="Industry subsectors whose production routes are modelled endogenously when `enable` is true.",
+    )
+
+
+class _SteelBOFConfig(BaseModel):
+    """Configuration for `sector.steel_bof` settings."""
+
+    pledge: bool = Field(
+        True,
+        description="Decommission existing coal blast furnaces at the phase-out year pledged by their operator (GEM steel tracker) instead of at the end of their technical lifetime.",
+    )
+    pledge_delay: int = Field(
+        0, description="Delay the pledged decommissioning year by this number of years."
+    )
+
+
+class _CementConfig(BaseModel):
+    """Configuration for `sector.cement` settings."""
+
+    calcination_emissions: float = Field(
+        0.5071,
+        description="Process CO2 released by calcination per tonne of clinker (tCO2/t clinker), IPCC EFDB default; used by the endogenous cement kiln until technology-data ships the value.",
+    )
 
 
 class SectorConfig(BaseModel):
@@ -1046,4 +1084,20 @@ class SectorConfig(BaseModel):
     )
     imports: _ImportsConfig = Field(
         default_factory=_ImportsConfig, description="Imports configuration."
+    )
+
+    # Endogenous production routes (steel, cement)
+    endogenous_sectors: _EndogenousSectorsConfig = Field(
+        default_factory=_EndogenousSectorsConfig,
+        description="Industry subsectors whose production routes are modelled endogenously.",
+    )
+    hbi_relocation: bool = Field(
+        False,
+        description="Pool hot briquetted iron (HBI) on one European bus so iron ore reduction can relocate away from the steel site; per-node HBI buses otherwise.",
+    )
+    steel_bof: _SteelBOFConfig = Field(
+        default_factory=_SteelBOFConfig, description="Existing blast furnace phase-out."
+    )
+    cement: _CementConfig = Field(
+        default_factory=_CementConfig, description="Endogenous cement route parameters."
     )

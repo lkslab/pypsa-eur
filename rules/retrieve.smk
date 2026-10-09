@@ -911,6 +911,34 @@ if (TABULA_CALCULATOR := dataset_version("tabula_calculator"))["source"] in [
             copy2(input["xlsx"], output["xlsx"])
 
 
+if (FFE_INDUSTRY_LOAD_PROFILES := dataset_version("ffe_industry_load_profiles"))[
+    "source"
+] in [
+    "primary",
+    "archive",
+]:
+
+    rule retrieve_ffe_industry_load_profiles:
+        cache: "omit-storage-content"
+        output:
+            json=f"{FFE_INDUSTRY_LOAD_PROFILES['folder']}/ffe_industry_load_profiles.json",
+        retries: 2
+        resources:
+            mem_mb=1000,
+        message:
+            "Retrieving FfE industrial electricity load profiles"
+        params:
+            version=FFE_INDUSTRY_LOAD_PROFILES["version"],
+            url=FFE_INDUSTRY_LOAD_PROFILES["url"],
+        run:
+            import json
+
+            response = requests.get(params["url"], timeout=120)
+            response.raise_for_status()
+            with open(output["json"], "w") as f:
+                json.dump(response.json(), f)
+
+
 if (HOTMAPS_INDUSTRIAL_SITES := dataset_version("hotmaps_industrial_sites"))[
     "source"
 ] in [

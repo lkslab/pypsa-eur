@@ -197,6 +197,10 @@ class DataConfig(BaseModel):
         default_factory=_DataSourceConfig,
         description="GEM Global Cement and Concrete Tracker data source configuration.",
     )
+    ffe_industry_load_profiles: _DataSourceConfig = Field(
+        default_factory=lambda: _DataSourceConfig(source="primary"),
+        description="FfE normed industrial electricity load profiles per branch (Germany 2017) data source configuration.",
+    )
     instrat_co2_prices: _DataSourceConfig = Field(
         default_factory=lambda: _DataSourceConfig(source="primary"),
         description="Instrat CO2 prices data source configuration.",

@@ -1251,10 +1251,39 @@ rule build_industrial_production_per_node:
         scripts("build_industrial_production_per_node.py")
 
 
-rule build_industrial_energy_demand_per_node:
+rule build_industry_plants:
     cache: True
     input:
+        code_dependencies=code_dependencies("scripts/build_industry_plants.py"),
+        onshore_regions=resources("onshore_regions.geojson"),
+        gem_gcct=rules.retrieve_gem_cement_concrete_tracker.output["xlsx"],
+        isi_database="data/1-s2.0-S0196890424010586-mmc2.xlsx",
+        ammonia="data/ammonia_plants.csv",
+    output:
+        industry_plants=resources("industry_plants.csv"),
+    log:
+        logs("build_industry_plants.log"),
+    threads: 1
+    resources:
+        mem_mb=2000,
+    params:
+        countries=config_provider("countries"),
+    message:
+        "Locating existing steel, cement, ammonia and methanol plants on the model regions"
+    script:
+        scripts("build_industry_plants.py")
+
+
+rule build_industrial_energy_demand_per_node:
+    cache: True
+    params:
+        endogenous_sectors=config_provider("sector", "endogenous_sectors"),
+        snapshots=config_provider("snapshots"),
+        drop_leap_day=config_provider("enable", "drop_leap_day"),
+    input:
         code_dependencies=code_dependencies("scripts/build_industrial_energy_demand_per_node.py"),
+        ffe_profiles=rules.retrieve_ffe_industry_load_profiles.output["json"],
+        clustered_pop_layout=resources("pop_layout.csv"),
         industry_sector_ratios=resources("industry_sector_ratios_{horizon}.csv"),
         industry_sector_ratios_endogenous=resources(
             "industry_sector_ratios_endogenous.csv"
@@ -1266,6 +1295,9 @@ rule build_industrial_energy_demand_per_node:
     output:
         industrial_energy_demand_per_node=resources(
             "industrial_energy_demand_{horizon}.csv"
+        ),
+        industrial_electricity_profile=resources(
+            "industrial_electricity_profile_{horizon}.csv"
         ),
     log:
         logs("build_industrial_energy_demand_per_node_{horizon}.log"),
