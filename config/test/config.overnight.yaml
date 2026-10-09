@@ -102,10 +102,12 @@ sector:
   biomass_to_liquid: false
   electrobiofuels: false
 
-industry:
-  HVC_environment_sequestration_fraction: 0.5
+waste:
   waste_to_energy: true
   waste_to_energy_cc: true
+
+industry:
+  HVC_environment_sequestration_fraction: 0.5
 
 solving:
   solver:

@@ -97,6 +97,7 @@ def _options() -> dict:
         "methanol": True,
         "industry": True,
         "fossil_fuels": True,
+        "waste": True,
     }
 
 
@@ -122,7 +123,7 @@ def _spatial() -> SimpleNamespace:
             nodes=["EU solid biomass"],
             df=pd.DataFrame({"nodes": "EU solid biomass"}, index=NODES),
         ),
-        oil=SimpleNamespace(non_sequestered_hvc=["EU non-sequestered HVC"]),
+        waste=SimpleNamespace(df=pd.DataFrame({"buses": "EU waste"}, index=NODES)),
         co2=SimpleNamespace(nodes=["co2 stored"]),
         coal=SimpleNamespace(nodes=["EU coal"], locations=["EU"]),
         methanol=SimpleNamespace(nodes=["EU methanol"]),
@@ -137,7 +138,7 @@ def _base_network() -> pypsa.Network:
         n.add("Bus", f"{node} H2", carrier="H2")
     n.add("Bus", "EU gas", carrier="gas")
     n.add("Bus", "EU solid biomass", carrier="solid biomass")
-    n.add("Bus", "EU non-sequestered HVC", carrier="non-sequestered HVC")
+    n.add("Bus", "EU waste", carrier="waste")
     n.add("Bus", "co2 stored", carrier="co2 stored")
     n.add("Bus", "co2 atmosphere", carrier="co2")
     n.add("Bus", "EU coal", carrier="coal")

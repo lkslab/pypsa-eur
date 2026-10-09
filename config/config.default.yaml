@@ -1063,7 +1063,8 @@ sector:
   biosng: false
   biosng_cc: false
   bioH2: false
-  municipal_solid_waste: false
+  waste: true
+  waste_spatial: true
   limit_max_growth:
     enable: false
     factor: 1.3
@@ -1172,8 +1173,6 @@ industry:
     2045: 0.16
     2050: 0.2
   HVC_environment_sequestration_fraction: 0.0
-  waste_to_energy: false
-  waste_to_energy_cc: false
   solid_biomass_for_industry_cc: true
   gas_for_industry_cc: true
   process_emissions_cc: true
@@ -1200,6 +1199,12 @@ industry:
   temporal_electricity_industry_load: false
   reference_year: 2023
   oil_refining_emissions: 0.013
+
+# docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#waste
+waste:
+  transport: false
+  waste_to_energy: false
+  waste_to_energy_cc: false
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#costs
 costs:

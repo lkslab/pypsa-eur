@@ -38,6 +38,7 @@ from scripts.lib.validation.config.transformers import TransformersConfig
 from scripts.lib.validation.config.transmission_projects import (
     TransmissionProjectsConfig,
 )
+from scripts.lib.validation.config.waste import WasteConfig
 
 
 class LoggingConfig(ConfigModel):
@@ -202,6 +203,10 @@ class ConfigSchema(BaseModel):
     industry: IndustryConfig = Field(
         default_factory=IndustryConfig,
         description="Industry sector configuration.",
+    )
+    waste: WasteConfig = Field(
+        default_factory=WasteConfig,
+        description="Waste sector configuration.",
     )
     costs: CostsConfig = Field(
         default_factory=CostsConfig,

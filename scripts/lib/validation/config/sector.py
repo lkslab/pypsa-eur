@@ -1110,8 +1110,13 @@ class SectorConfig(BaseModel):
         False,
         description="Add option for transforming solid biomass into hydrogen with carbon capture.",
     )
-    municipal_solid_waste: bool = Field(
-        False, description="Add option for municipal solid waste."
+    waste: bool = Field(
+        True,
+        description="Model the waste streams (non-sequestered HVC, municipal solid waste) on their own waste buses, see the `waste` chapter; off, the naphtha link releases the non-sequestered HVC carbon directly.",
+    )
+    waste_spatial: bool = Field(
+        True,
+        description="One waste bus per model region instead of one European bus.",
     )
 
     limit_max_growth: _LimitMaxGrowthConfig = Field(

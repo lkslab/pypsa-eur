@@ -2696,16 +2696,6 @@
           "description": "The fraction of high value chemicals (HVC) put into landfill resulting in additional carbon sequestration. The default value is 0.",
           "type": "number"
         },
-        "waste_to_energy": {
-          "default": false,
-          "description": "Switch to enable expansion of waste to energy CHPs for conversion of plastics. Default is false.",
-          "type": "boolean"
-        },
-        "waste_to_energy_cc": {
-          "default": false,
-          "description": "Switch to enable expansion of waste to energy CHPs for conversion of plastics with carbon capture. Default is false.",
-          "type": "boolean"
-        },
         "solid_biomass_for_industry_cc": {
           "default": true,
           "description": "Add option for using solid biomass for industry with carbon capture, in addition to solid biomass for industry without carbon capture.",
@@ -5355,9 +5345,14 @@
           "description": "Add option for transforming solid biomass into hydrogen with carbon capture.",
           "type": "boolean"
         },
-        "municipal_solid_waste": {
-          "default": false,
-          "description": "Add option for municipal solid waste.",
+        "waste": {
+          "default": true,
+          "description": "Model the waste streams (non-sequestered HVC, municipal solid waste) on their own waste buses, see the `waste` chapter; off, the naphtha link releases the non-sequestered HVC carbon directly.",
+          "type": "boolean"
+        },
+        "waste_spatial": {
+          "default": true,
+          "description": "One waste bus per model region instead of one European bus.",
           "type": "boolean"
         },
         "limit_max_growth": {
@@ -6137,6 +6132,26 @@
             "keep"
           ],
           "type": "string"
+        }
+      }
+    },
+    "WasteConfig": {
+      "description": "Configuration for `waste` settings.",
+      "properties": {
+        "transport": {
+          "default": false,
+          "description": "Allow the transport of waste between model regions at the biomass transport costs; needs `sector.waste_spatial`.",
+          "type": "boolean"
+        },
+        "waste_to_energy": {
+          "default": false,
+          "description": "Expandable waste-to-energy CHPs that burn the waste potential for electricity and district heat.",
+          "type": "boolean"
+        },
+        "waste_to_energy_cc": {
+          "default": false,
+          "description": "Expandable waste-to-energy CHPs with carbon capture.",
+          "type": "boolean"
         }
       }
     },
@@ -12504,9 +12519,14 @@
           "description": "Add option for transforming solid biomass into hydrogen with carbon capture.",
           "type": "boolean"
         },
-        "municipal_solid_waste": {
-          "default": false,
-          "description": "Add option for municipal solid waste.",
+        "waste": {
+          "default": true,
+          "description": "Model the waste streams (non-sequestered HVC, municipal solid waste) on their own waste buses, see the `waste` chapter; off, the naphtha link releases the non-sequestered HVC carbon directly.",
+          "type": "boolean"
+        },
+        "waste_spatial": {
+          "default": true,
+          "description": "One waste bus per model region instead of one European bus.",
           "type": "boolean"
         },
         "limit_max_growth": {
@@ -12784,16 +12804,6 @@
           "description": "The fraction of high value chemicals (HVC) put into landfill resulting in additional carbon sequestration. The default value is 0.",
           "type": "number"
         },
-        "waste_to_energy": {
-          "default": false,
-          "description": "Switch to enable expansion of waste to energy CHPs for conversion of plastics. Default is false.",
-          "type": "boolean"
-        },
-        "waste_to_energy_cc": {
-          "default": false,
-          "description": "Switch to enable expansion of waste to energy CHPs for conversion of plastics with carbon capture. Default is false.",
-          "type": "boolean"
-        },
         "solid_biomass_for_industry_cc": {
           "default": true,
           "description": "Add option for using solid biomass for industry with carbon capture, in addition to solid biomass for industry without carbon capture.",
@@ -12901,6 +12911,26 @@
           "default": 0.013,
           "description": "The emissions from oil fuel processing (e.g. oil in petrochemical refinieries). The default value of 0.013 tCO2/MWh is based on DE statistics for 2019; the EU value is very similar.",
           "type": "number"
+        }
+      }
+    },
+    "waste": {
+      "description": "Configuration for `waste` settings.",
+      "properties": {
+        "transport": {
+          "default": false,
+          "description": "Allow the transport of waste between model regions at the biomass transport costs; needs `sector.waste_spatial`.",
+          "type": "boolean"
+        },
+        "waste_to_energy": {
+          "default": false,
+          "description": "Expandable waste-to-energy CHPs that burn the waste potential for electricity and district heat.",
+          "type": "boolean"
+        },
+        "waste_to_energy_cc": {
+          "default": false,
+          "description": "Expandable waste-to-energy CHPs with carbon capture.",
+          "type": "boolean"
         }
       }
     },
