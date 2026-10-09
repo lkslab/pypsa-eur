@@ -5,6 +5,12 @@
 
 <!-- Upcoming Release -->
 <!-- ================= -->
+* Single-country selections no longer crash the data-building rules: a landlocked country (`countries: [AT]`) reads back an empty offshore-shapes file in `build_nuts3_shapes` and `build_shapes`; an offshore-only cluster (a high per-country resolution such as NL at 34 clusters) measures its offwind shoreline distance to the nearest onshore region in `build_renewable_profiles`; a selection without any JRC-IDEES country (`[NO]`, `[CH]`, `[GB]`, `[BA]`) fills `build_energy_totals` from the EU27 countries as a reference (dropped from the outputs again), scales `build_industrial_energy_demand_per_country_today` from the JRC-IDEES EU27 aggregate, and leaves `build_electricity_demand_base` to its NUTS3 distribution keys. Selections with an IDEES country are unchanged.
+
+* New `solving: options: infeasibility_diagnosis:` (`enable`, `time_limit`): `solve_network` can skip or bound the IIS computation of an infeasible model, which otherwise ran unbounded (hours on a sector-coupled model). Defaults keep the previous behaviour; the error now names the termination condition.
+
+* The `cluster_network` bound assertion reports the requested `n_clusters`; `build_industrial_production_per_country`, `build_industrial_energy_demand_per_country_today` and `build_transformation_output_coke` declare the memory the JRC-IDEES and Eurostat reads need (16 GB, 16 GB, 8 GB).
+
 * Streamlined workflow ([#1838](https://github.com/PyPSA/pypsa-eur/pull/1838)): overnight, myopic, and perfect foresight are now handled by a unified set of rules for both electricity-only and sector-coupled models. See the [migration guide](migration.md) for detailed migration guidance.
 
     **Workflow structure:**
