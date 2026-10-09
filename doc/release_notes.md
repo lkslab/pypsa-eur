@@ -9,6 +9,8 @@
 
 * New `solving: options: infeasibility_diagnosis:` (`enable`, `time_limit`): `solve_network` can skip or bound the IIS computation of an infeasible model, which otherwise ran unbounded (hours on a sector-coupled model). Defaults keep the previous behaviour; the error now names the termination condition.
 
+* Feature: New switches `industry: solid_biomass_for_industry_cc`, `industry: gas_for_industry_cc` and `industry: process_emissions_cc` to disable the carbon capture options for solid biomass for industry, gas for industry and industrial process emissions. All default to `true`, which matches the previous behaviour ([#2357](https://github.com/PyPSA/pypsa-eur/pull/2357)).
+
 * The `cluster_network` bound assertion reports the requested `n_clusters`; `build_industrial_production_per_country`, `build_industrial_energy_demand_per_country_today` and `build_transformation_output_coke` declare the memory the JRC-IDEES and Eurostat reads need (16 GB, 16 GB, 8 GB).
 
 * Streamlined workflow ([#1838](https://github.com/PyPSA/pypsa-eur/pull/1838)): overnight, myopic, and perfect foresight are now handled by a unified set of rules for both electricity-only and sector-coupled models. See the [migration guide](migration.md) for detailed migration guidance.
