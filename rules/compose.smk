@@ -59,6 +59,7 @@ def get_compose_inputs(w):
     if sector_enabled:
         sector_inputs = dict(
             **input_heat_source_power(w),
+            **input_geothermal_heat_steps(w),
             **rules.cluster_gas_network.output,
             **rules.build_gas_input_locations.output,
             pop_weighted_energy_totals=resources("pop_weighted_energy_totals.csv"),
@@ -137,11 +138,6 @@ def get_compose_inputs(w):
             ),
             egs_potentials=(
                 resources("egs_potentials.csv")
-                if cfg["sector"]["enhanced_geothermal"]["enable"]
-                else []
-            ),
-            egs_overlap=(
-                resources("egs_overlap.csv")
                 if cfg["sector"]["enhanced_geothermal"]["enable"]
                 else []
             ),

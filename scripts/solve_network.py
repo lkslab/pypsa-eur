@@ -1150,19 +1150,38 @@ def add_pipe_retrofit_constraint(n, config):
 
 def add_flexible_egs_constraint(n):
     """
-    Upper bounds the charging capacity of the geothermal reservoir according to
-    the well capacity.
+    Upper bounds the charging capacity of each region's geothermal reservoir by
+    the capacity of that region's wells.
     """
-    well_index = n.links.loc[n.links.carrier == "geothermal heat"].index
-    storage_index = n.storage_units.loc[
-        n.storage_units.carrier == "geothermal heat"
-    ].index
+    wells = n.links.loc[
+        (n.links.carrier == "geothermal heat") & n.links.p_nom_extendable
+    ]
+    reservoirs = n.storage_units.loc[
+        (n.storage_units.carrier == "geothermal heat")
+        & n.storage_units.p_nom_extendable
+    ]
+    if wells.empty or reservoirs.empty:
+        return
 
-    p_nom_rhs = n.model["Link-p_nom"].loc[well_index]
-    p_nom_lhs = n.model["StorageUnit-p_nom"].loc[storage_index]
-
+    rename_links = {} if PYPSA_V1 else {"Link-ext": "Link"}
+    rename_units = {} if PYPSA_V1 else {"StorageUnit-ext": "StorageUnit"}
+    well_capacity = (
+        n.model["Link-p_nom"]
+        .rename(rename_links)
+        .loc[wells.index]
+        .groupby(wells.bus1.rename("bus"))
+        .sum()
+    )
+    reservoir_capacity = (
+        n.model["StorageUnit-p_nom"]
+        .rename(rename_units)
+        .loc[reservoirs.index]
+        .groupby(reservoirs.bus.rename("bus"))
+        .sum()
+    )
+    buses = reservoir_capacity.indexes["bus"].intersection(well_capacity.indexes["bus"])
     n.model.add_constraints(
-        p_nom_lhs <= p_nom_rhs,
+        reservoir_capacity.loc[buses] <= well_capacity.loc[buses],
         name="upper_bound_charging_capacity_of_geothermal_reservoir",
     )
 
@@ -1293,7 +1312,10 @@ def extra_functionality(
     else:
         add_co2_atmosphere_constraint(n, snapshots)
 
-    if config["sector"]["enhanced_geothermal"]["enable"]:
+    if (
+        config["sector"]["enhanced_geothermal"]["enable"]
+        and config["sector"]["enhanced_geothermal"]["flexible"]
+    ):
         add_flexible_egs_constraint(n)
 
     if config["sector"]["imports"]["enable"]:

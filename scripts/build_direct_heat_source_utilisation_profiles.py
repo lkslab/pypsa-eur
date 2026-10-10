@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 def get_source_temperature(heat_source_key: str):
     """
-    Get the constant temperature of a heat source.
+    Get the temperature of a heat source: per region where the rule passes a
+    temperature file (`temp_<heat source>`), the configured constant otherwise.
 
     Args:
     ----
@@ -34,8 +35,9 @@ def get_source_temperature(heat_source_key: str):
 
     Returns:
     -------
-    float
-        The constant temperature of the heat source in degrees Celsius.
+    float | xr.DataArray
+        The temperature of the heat source in degrees Celsius, per region (`name`)
+        if read from a file.
 
     Raises:
     ------
@@ -43,6 +45,9 @@ def get_source_temperature(heat_source_key: str):
         If the heat source is unknown (not in `config`).
     """
 
+    if f"temp_{heat_source_key}" in snakemake.input.keys():
+        # per-region source temperature (geology-based geothermal)
+        return xr.open_dataarray(snakemake.input[f"temp_{heat_source_key}"])
     if heat_source_key in snakemake.params.limited_heat_sources.keys():
         return snakemake.params.limited_heat_sources[heat_source_key][
             "constant_temperature_celsius"

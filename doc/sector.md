@@ -33,6 +33,10 @@ The sector-specific preprocessing rules generate intermediate data files that ar
 
 ::: build_egs_potentials
 
+## Rule `build_geothermal_columns`
+
+::: build_geothermal_columns
+
 ## Rule `build_biomass_transport_costs`
 
 ::: build_biomass_transport_costs
