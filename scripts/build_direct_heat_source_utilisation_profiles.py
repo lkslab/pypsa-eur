@@ -45,9 +45,11 @@ def get_source_temperature(heat_source_key: str):
         If the heat source is unknown (not in `config`).
     """
 
-    if f"temp_{heat_source_key}" in snakemake.input.keys():
-        # per-region source temperature (geology-based geothermal)
-        return xr.open_dataarray(snakemake.input[f"temp_{heat_source_key}"])
+    # per-region source temperature (geology-based geothermal); the rule passes
+    # an empty input where the source has no temperature file
+    temperature_file = snakemake.input.get(f"temp_{heat_source_key}")
+    if temperature_file:
+        return xr.open_dataarray(temperature_file)
     if heat_source_key in snakemake.params.limited_heat_sources.keys():
         return snakemake.params.limited_heat_sources[heat_source_key][
             "constant_temperature_celsius"
@@ -78,7 +80,11 @@ def get_profile(
         The direct heat source utilisation profile.
 
     """
-    return xr.where(source_temperature >= forward_temperature, 1.0, 0.0)
+    # a per-region source broadcasts its own dimension first, so restore the
+    # forward temperature's (time, name) order the network expects
+    return xr.where(source_temperature >= forward_temperature, 1.0, 0.0).transpose(
+        *forward_temperature.dims
+    )
 
 
 if __name__ == "__main__":
