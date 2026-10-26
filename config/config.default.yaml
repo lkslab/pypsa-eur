@@ -1644,6 +1644,9 @@ data:
   ghg_emissions:
     source: archive
     version: latest
+  eea_ghg_inventory:
+    source: primary
+    version: latest
   gebco:
     source: archive
     version: latest
