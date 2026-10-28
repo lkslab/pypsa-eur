@@ -9,7 +9,7 @@ Description
 
 The industrial production is taken from the `JRC-IDEES <https://joint-research-centre.ec.europa.eu/potencia-policy-oriented-tool-energy-and-climate-change-impact-assessment/jrc-idees_en)>`.
 This dataset provides detailed information about the consumption of energy for various processes.
-If the country is not part of the EU28, the energy consumption in the industrial sectors is taken from the `Eurostat <https://ec.europa.eu/eurostat/de/data/database>` dataset. The industrial production is calculated for the year specified in the `config["industry"]["reference_year"]`.
+If the country is not part of the EU28, the energy consumption in the industrial sectors is taken from the `Eurostat <https://ec.europa.eu/eurostat/de/data/database>` dataset, from the latest year up to the reference year that reports it (the UK series ends in 2019). The industrial production is calculated for the year specified in the `config["industry"]["reference_year"]`.
 
 The ammonia production is provided by the rule `build_ammonia_production <https://pypsa-eur.readthedocs.io/en/latest/sector.html#module-build_ammonia_production>`. Since Switzerland is not part of the EU28 nor reported by eurostat, the energy consumption in the industrial sectors is taken from the `BFE <https://pubdb.bfe.admin.ch/de/publication/download/11817> dataset.
 After the industrial production is calculated, the basic chemicals are separated into ammonia, chlorine, methanol and HVC. The production of these chemicals is assumed to be proportional to the production of basic chemicals without ammonia.
@@ -174,6 +174,43 @@ def find_physical_output(df):
     return slice(start, end)
 
 
+def eurostat_industry_energy(country, eurostat, year):
+    """
+    The country's final energy use per industrial sector in ktoe, from the
+    Eurostat balances of ``year`` or, when that year carries no industry rows
+    for the country, of the latest earlier year that does: the UK series ends
+    in 2019 and Ukraine's in 2020, and a reference year past the end would
+    otherwise scale the country's whole industrial production to zero.
+
+    Returns the series and the year it comes from. A country Eurostat never
+    reports industry for returns an empty series (every ratio NaN, the
+    production zero as before) and ``year``.
+    """
+    rows = eurostat.query(
+        "country == @country and siec == 'TOTAL' and nrg_bal in @eb_sectors.keys()"
+    ).dropna(subset=["value"])
+    rows = rows[rows.year <= year]
+    if rows.empty:
+        logger.warning(
+            f"Eurostat carries no industrial energy use for {country} up to {year}; "
+            "its industrial production scales to zero."
+        )
+        return pd.Series(dtype=float), year
+    year_used = int(rows.year.max())
+    if year_used != year:
+        logger.info(
+            f"Eurostat's industrial energy use for {country} ends in {year_used}; "
+            f"scaling its {year} production from that year."
+        )
+    e_country = (
+        rows.query("year == @year_used")
+        .set_index("nrg_bal")
+        .value.rename(eb_sectors)
+        .div(ktoe_to_twh)
+    )
+    return e_country, year_used
+
+
 def get_energy_ratio(country, eurostat, jrc_dir, year, snakemake):
     if country == "CH":
         # data ranges between 2014-2023
@@ -185,15 +222,7 @@ def get_energy_ratio(country, eurostat, jrc_dir, year, snakemake):
         e_country *= tj_to_ktoe
     else:
         # estimate physical output, energy consumption in the sector and country
-        e_country = (
-            eurostat.query(
-                "year == @year and country == @country and "
-                "siec == 'TOTAL' and nrg_bal in @eb_sectors.keys()"
-            )
-            .set_index("nrg_bal")
-            .value.rename(eb_sectors)
-            .div(ktoe_to_twh)
-        )
+        e_country, year = eurostat_industry_energy(country, eurostat, year)
 
     root = Path(jrc_dir, "EU27")
     fn = next(
